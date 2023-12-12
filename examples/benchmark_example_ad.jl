@@ -44,7 +44,7 @@ function rotate(arr, θ)
 	# out array
 	out = similar(arr)
 	fill!(out, 0)
-	for j in 1:size(arr, 2)
+	Threads.@threads for j in 1:size(arr, 2)
 		for i in 1:size(arr, 1)
 			y = i - mid
 			x = j - mid
@@ -80,7 +80,7 @@ function rotate_adj(arr, θ)
 	# out array
 	out = similar(arr)
 	fill!(out, 0)
-	for j in 1:size(arr, 2)
+	Threads.@threads for j in 1:size(arr, 2)
 		for i in 1:size(arr, 1)
 			y = i - mid
 			x = j - mid
@@ -114,26 +114,6 @@ function ChainRulesCore.rrule(rotate, array, angle)
 	return rotate(array, angle), pb_rotate
 end
 
-# ╔═╡ 31455f34-c7d0-4237-b31d-8ea05ebf55f5
-@kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid, radius)
-	j, i = @index(Global, NTuple)
-	y = i - mid
-	x = j - mid
-	if y^2 + x^2 < radius ^2
-		yrot = cosθ * y - sinθ * x
-		xrot = sinθ * y + cosθ * x
-		yrotf = floor(yrot)
-		xrotf = floor(xrot)
-		inew = floor(Int, yrot) + mid
-		jnew = floor(Int, xrot) + mid
-
-		@inbounds out[i, j] = ((1 - (xrot - xrotf)) * (1 - (yrot - yrotf)) * arr[inew, jnew]
-					 + (1 - (xrot - xrotf)) * (yrot - yrotf) * arr[inew + 1, jnew]
-					 + (xrot - xrotf) * (1 - (yrot - yrotf)) * arr[inew, jnew + 1] 
-					 + (xrot - xrotf) * (yrot - yrotf) * arr[inew + 1, jnew + 1])
-	end
-end
-
 # ╔═╡ 64f971e7-acbf-43d2-852c-50db92e9d1c5
 function imrotate(arr, θ)
 	backend = get_backend(arr)
@@ -156,6 +136,95 @@ function imrotate(arr, θ)
 	return out
 end
 
+# ╔═╡ 31455f34-c7d0-4237-b31d-8ea05ebf55f5
+@kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid, radius)
+	j, i = @index(Global, NTuple)
+	y = i - mid
+	x = j - mid
+	if y^2 + x^2 < radius ^2
+		yrot = cosθ * y - sinθ * x
+		xrot = sinθ * y + cosθ * x
+		yrotf = floor(yrot)
+		xrotf = floor(xrot)
+		inew = floor(Int, yrot) + mid
+		jnew = floor(Int, xrot) + mid
+
+		@inbounds out[i, j] = ((1 - (xrot - xrotf)) * (1 - (yrot - yrotf)) * arr[inew, jnew]
+					 + (1 - (xrot - xrotf)) * (yrot - yrotf) * arr[inew + 1, jnew]
+					 + (xrot - xrotf) * (1 - (yrot - yrotf)) * arr[inew, jnew + 1] 
+					 + (xrot - xrotf) * (yrot - yrotf) * arr[inew + 1, jnew + 1])
+	end
+end
+
+# ╔═╡ c7c0b3aa-c05e-4c98-8a1d-14bfa4732765
+function imrotate3(arr, θ)
+	backend = get_backend(arr)
+	@assert size(arr, 1) == size(arr, 2)
+	# needed for rotation matrix
+	sinθ, cosθ = sincos(θ)
+
+	# important variables
+	mid = size(arr, 1) .÷ 2 + 1
+	radius = mid - 2
+
+	# out array
+	out = similar(arr)
+	fill!(out, 0)
+
+	kernel! = imrotate_kernel3!(backend)
+	kernel!(out, arr, sinθ, cosθ, mid, radius,
+		    ndrange=(size(arr, 3), size(arr, 2), size(arr, 1)))
+
+	return out
+end
+
+# ╔═╡ 0804fa88-4805-4628-b75f-cd4faec7256a
+@kernel function imrotate_kernel3!(out, arr, sinθ, cosθ, mid, radius)
+	k, j, i = @index(Global, NTuple)
+	y = i - mid
+	x = j - mid
+	if y^2 + x^2 < radius ^2
+		yrot = cosθ * y - sinθ * x
+		xrot = sinθ * y + cosθ * x
+		yrotf = floor(yrot)
+		xrotf = floor(xrot)
+		inew = floor(Int, yrot) + mid
+		jnew = floor(Int, xrot) + mid
+
+		@inbounds out[i, j, k] = ((1 - (xrot - xrotf)) * (1 - (yrot - yrotf)) * arr[inew, jnew, k]
+					 + (1 - (xrot - xrotf)) * (yrot - yrotf) * arr[inew + 1, jnew, k]
+					 + (xrot - xrotf) * (1 - (yrot - yrotf)) * arr[inew, jnew + 1, k] 
+					 + (xrot - xrotf) * (yrot - yrotf) * arr[inew + 1, jnew + 1, k])
+	end
+end
+
+# ╔═╡ b71867f2-577b-4a31-9e5a-d99d8fdd8eac
+# ╠═╡ disabled = true
+#=╠═╡
+CUDA.@time CUDA.@sync imrotate(big_c, deg2rad(45));
+  ╠═╡ =#
+
+# ╔═╡ 4e5f007b-1925-484a-9e05-63259f26c955
+# ╠═╡ disabled = true
+#=╠═╡
+@benchmark CUDA.@sync imrotate3($big_c2, deg2rad(45))
+  ╠═╡ =#
+
+# ╔═╡ 1833e31a-f6dc-4ce1-b159-fad099b03b4b
+@benchmark CUDA.@sync imrotate3($big_c2, deg2rad(45))
+
+# ╔═╡ bf95687c-c8eb-4c2e-b021-0387181b42ed
+CUDA.@time CUDA.@sync imrotate3(big_c2, deg2rad(45));
+
+# ╔═╡ 928fc487-a15a-4c01-b44b-a0119c9aa3c4
+@time imrotate(big, deg2rad(45));
+
+# ╔═╡ 3fbdd801-4601-4386-a72e-c3f464dd566f
+
+
+# ╔═╡ 85e86c16-75f8-417a-b90e-6d1bf6fc04ac
+@benchmark CUDA.@sync imrotate($big_c, deg2rad(45))
+
 # ╔═╡ 45039708-41fb-4ddc-8e80-62f5aca5900a
 @bind angle3 Slider(0:360, show_value=true)
 
@@ -163,16 +232,19 @@ end
 f(x) = sum(abs2.(rotate(x, deg2rad(angle3))))
 
 # ╔═╡ 4df0f225-d596-4b38-b3a1-2ed7349e009b
-big = randn((512, 512));
+big = randn((8192, 8192));
 
-# ╔═╡ b71867f2-577b-4a31-9e5a-d99d8fdd8eac
-@benchmark rotate($big, deg2rad(45))
+# ╔═╡ 681b8003-afd4-4a6c-a1b1-75a29a6e4401
+big_c = CuArray(big);
 
-# ╔═╡ 928fc487-a15a-4c01-b44b-a0119c9aa3c4
-@benchmark imrotate($big, deg2rad(45))
+# ╔═╡ 54a45e1c-f13c-4f0c-a450-02cb9f7fd391
+big_c2 = reshape(big_c, (8192, 8192, 1));
 
 # ╔═╡ 7f27ed82-1bb1-4bf0-9f0f-e538c6264cc1
 imrotate(big, deg2rad(45)) ≈ rotate(big, deg2rad(45))
+
+# ╔═╡ 100649a5-affe-40bd-832d-e4bce5d4d758
+Array(imrotate(big_c, deg2rad(45))) ≈ rotate(big, deg2rad(45))
 
 # ╔═╡ 375412dd-8556-44a2-9ba3-1a5651639dd6
 @benchmark rotate($big, deg2rad(45))
@@ -256,9 +328,19 @@ simshow(img_rot2)
 # ╠═2d60e260-92a6-4914-9bb5-8fb8e5803dec
 # ╠═64f971e7-acbf-43d2-852c-50db92e9d1c5
 # ╠═31455f34-c7d0-4237-b31d-8ea05ebf55f5
+# ╠═c7c0b3aa-c05e-4c98-8a1d-14bfa4732765
+# ╠═0804fa88-4805-4628-b75f-cd4faec7256a
 # ╠═b71867f2-577b-4a31-9e5a-d99d8fdd8eac
+# ╠═4e5f007b-1925-484a-9e05-63259f26c955
+# ╠═1833e31a-f6dc-4ce1-b159-fad099b03b4b
+# ╠═bf95687c-c8eb-4c2e-b021-0387181b42ed
 # ╠═928fc487-a15a-4c01-b44b-a0119c9aa3c4
+# ╠═3fbdd801-4601-4386-a72e-c3f464dd566f
+# ╠═681b8003-afd4-4a6c-a1b1-75a29a6e4401
+# ╠═54a45e1c-f13c-4f0c-a450-02cb9f7fd391
+# ╠═85e86c16-75f8-417a-b90e-6d1bf6fc04ac
 # ╠═7f27ed82-1bb1-4bf0-9f0f-e538c6264cc1
+# ╠═100649a5-affe-40bd-832d-e4bce5d4d758
 # ╠═f2593988-32ee-49b3-ba75-6b11ca1d568b
 # ╠═aa16fd1f-4c34-4a66-8e30-96b2678a32cb
 # ╠═8bc5e9c7-a2c3-4375-98a1-49ccdd3036fa
