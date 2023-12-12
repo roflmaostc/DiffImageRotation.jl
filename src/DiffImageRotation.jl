@@ -98,13 +98,24 @@ end
     jnew = floor(Int, xrot) + mid
     
     if 1 ≤ inew < size(out, 1) && 1 ≤ jnew < size(out, 2)
-        xdiff = (xrot - xrotf)
-        ydiff = (yrot - yrotf)
-        @inbounds out[i, j, k] = 
-            ((1 - xdiff) * (1 - ydiff) * arr[inew, jnew, k]
-            + (1 - xdiff) * ydiff * arr[inew + 1, jnew, k]
-            + xdiff * (1 - ydiff) * arr[inew, jnew + 1, k] 
-            + xdiff * ydiff * arr[inew + 1, jnew + 1, k])
+         xdiff = (xrot - xrotf)
+         xdiff_diff = 1 - xdiff
+         ydiff = (yrot - yrotf)
+         ydiff_diff = 1 - ydiff
+         @inbounds out[i, j, k] = 
+             (xdiff_diff * ydiff_diff * arr[inew, jnew, k]
+             + xdiff_diff * ydiff * arr[inew + 1, jnew, k]
+             + xdiff * ydiff_diff * arr[inew, jnew + 1, k] 
+             + xdiff * ydiff * arr[inew + 1, jnew + 1, k])
+        #xdiff = (xrot - xrotf)
+        #ydiff = (yrot - yrotf)
+        #xy = xdiff * ydiff
+        #@inbounds out[i, j, k] = (
+        #      (1 - ydiff - xdiff + xy)* arr[inew, jnew, k]
+        #    + (ydiff - xy) * arr[inew + 1, jnew, k]
+        #    + (xdiff - xy) * arr[inew, jnew + 1, k] 
+        #    + xy * arr[inew + 1, jnew + 1, k])
+
     end
 end
 
