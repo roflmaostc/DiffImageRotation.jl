@@ -64,7 +64,6 @@ julia> Zygote.gradient(f, arr)
 ```
 """
 function imrotate(arr::AbstractArray{T, 3}, θ) where T
-    @assert size(arr, 1) == size(arr, 2) "only quadratic arrays in dimension 1 and 2"
     # needed for rotation matrix
     sinθ, cosθ = sincos(T(θ))
 
@@ -79,14 +78,14 @@ function imrotate(arr::AbstractArray{T, 3}, θ) where T
     backend = get_backend(arr)
     kernel! = imrotate_kernel!(backend)
     # launch kernel
-    kernel!(out, arr, sinθ, cosθ, mid,
+    kernel!(out, arr, sinθ, cosθ, mid, size(arr, 1), size(arr, 2),
             ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
 
 	return out
 end
 
 # KernelAbstractions specific
-@kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid)
+@kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid, imax, jmax)
     i, j, k = @index(Global, NTuple)
     y = i - mid
     x = j - mid
@@ -97,25 +96,20 @@ end
     inew = floor(Int, yrot) + mid
     jnew = floor(Int, xrot) + mid
     
-    if 1 ≤ inew < size(out, 1) && 1 ≤ jnew < size(out, 2)
-         xdiff = (xrot - xrotf)
-         xdiff_diff = 1 - xdiff
-         ydiff = (yrot - yrotf)
-         ydiff_diff = 1 - ydiff
-         @inbounds out[i, j, k] = 
-             (xdiff_diff * ydiff_diff * arr[inew, jnew, k]
-             + xdiff_diff * ydiff * arr[inew + 1, jnew, k]
-             + xdiff * ydiff_diff * arr[inew, jnew + 1, k] 
-             + xdiff * ydiff * arr[inew + 1, jnew + 1, k])
-        #xdiff = (xrot - xrotf)
-        #ydiff = (yrot - yrotf)
-        #xy = xdiff * ydiff
-        #@inbounds out[i, j, k] = (
-        #      (1 - ydiff - xdiff + xy)* arr[inew, jnew, k]
-        #    + (ydiff - xy) * arr[inew + 1, jnew, k]
-        #    + (xdiff - xy) * arr[inew, jnew + 1, k] 
-        #    + xy * arr[inew + 1, jnew + 1, k])
+    if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax 
+        xdiff = (xrot - xrotf)
+        xdiff_diff = 1 - xdiff
+        ydiff = (yrot - yrotf)
+        ydiff_diff = 1 - ydiff
+        # in case we hit the boundary stripe, then we need to avoid out of bounds access
+        Δi = inew != imax
+        Δj = jnew != jmax
 
+        @inbounds out[i, j, k] = 
+             ( xdiff_diff * ydiff_diff * arr[inew,      jnew,      k]
+             + xdiff_diff * ydiff      * arr[inew + Δi, jnew,      k]
+             + xdiff      * ydiff_diff * arr[inew,      jnew + Δj, k] 
+             + xdiff      * ydiff      * arr[inew + Δi, jnew + Δj, k])
     end
 end
 
@@ -124,7 +118,6 @@ imrotate_adj(arr::AbstractArray{T, 2}, θ) where T =
     view(imrotate_adj(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ), :, :, 1)
 
 function imrotate_adj(arr::AbstractArray{T, 3}, θ) where T
-    @assert size(arr, 1) == size(arr, 2) "only quadratic arrays in dimension 1 and 2"
     # needed for rotation matrix
     sinθ, cosθ = sincos(T(θ))
     
@@ -138,7 +131,7 @@ function imrotate_adj(arr::AbstractArray{T, 3}, θ) where T
     backend = get_backend(arr)
     kernel! = imrotate_kernel_adj!(backend)
     # launch kernel
-    kernel!(out, arr, sinθ, cosθ, mid,
+    kernel!(out, arr, sinθ, cosθ, mid, size(arr, 1), size(arr, 2),
         ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
     
     return out
@@ -147,7 +140,7 @@ end
 
 
 # KernelAbstractions specific
-@kernel function imrotate_kernel_adj!(out, arr, sinθ, cosθ, mid)
+@kernel function imrotate_kernel_adj!(out, arr, sinθ, cosθ, mid, imax, jmax)
     i, j, k = @index(Global, NTuple)
     y = i - mid
     x = j - mid
@@ -157,14 +150,17 @@ end
     xrotf = floor(xrot)
     inew = floor(Int, yrot) + mid
     jnew = floor(Int, xrot) + mid
-    if 1 ≤ inew < size(out, 1) && 1 ≤ jnew < size(out, 2)
+    if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax
         o = arr[i, j, k]
         xdiff = (xrot - xrotf)
         ydiff = (yrot - yrotf)
-        Atomix.@atomic out[inew, jnew, k] += (1 - xdiff) * (1 - ydiff) * o
-        Atomix.@atomic out[inew + 1, jnew, k] += (1 - xdiff) * ydiff * o
-        Atomix.@atomic out[inew, jnew + 1, k] += xdiff * (1 - ydiff) * o
-        Atomix.@atomic out[inew + 1, jnew + 1, k] += xdiff * ydiff * o
+        # in case we hit the boundary stripe, then we need to avoid out of bounds access
+        Δi = inew != imax
+        Δj = jnew != jmax
+        Atomix.@atomic out[inew,      jnew,      k] += (1 - xdiff) * (1 - ydiff) * o
+        Atomix.@atomic out[inew + Δi, jnew,      k] += (1 - xdiff) * ydiff       * o
+        Atomix.@atomic out[inew,      jnew + Δj, k] += xdiff       * (1 - ydiff) * o
+        Atomix.@atomic out[inew + Δi, jnew + Δj, k] += xdiff       * ydiff       * o
     end
 end
 
