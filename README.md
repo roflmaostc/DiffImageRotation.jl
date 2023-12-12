@@ -5,7 +5,7 @@ To provide a bilinear interpolation based image rotation which works with CUDA a
 (thanks to [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl)).
 It can rotate images but also arrays with batch dimensions.
 
-Further, it has registered adjoints with [ChainRulesCore](https://github.com/JuliaDiff/ChainRulesCore.jl).
+Further, it has registered adjoints with [ChainRulesCore.jl](https://github.com/JuliaDiff/ChainRulesCore.jl).
 
 Try it out with:
 ```julia
