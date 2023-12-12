@@ -1,5 +1,8 @@
 # DiffImageRotation.jl
 
+[![Build Status](https://github.com/roflmaostc/DiffImageRotation.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/roflmaostc/DiffImageRotation.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/roflmaostc/DiffImageRotation.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/roflmaostc/DiffImageRotation.jl) 
+
 This package serves only one purpose.
 To provide a bilinear interpolation based image rotation which works with CUDA and multithreaded CPUs
 (thanks to [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl)).
