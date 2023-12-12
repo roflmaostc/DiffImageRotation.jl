@@ -38,3 +38,11 @@ But, it doesn't run with `CuArrays` and does not provide an adjoint/gradient rul
 
 There is `rotate` by [FourierTools.jl](https://nanoimaging.de/FourierTools.jl/dev/rotate/).
 It's based on FFTs. It is based on a sinc interpolation.
+
+
+## Benchmarks
+|                 | DiffImageRotations.jl | CUDA DiffImageRotations.jl | FourierTools.jl | ImageTransformations.jl | CUDA FFT (as CUDA reference) |
+|-----------------|-----------------------|----------------------------|-----------------|-------------------------|------------------------------|
+| (2048, 2048)    | 2.4ms                 | 0.32ms                      | 860ms           | 31ms                    | 0.86ms                        |
+| (256, 256)      | 65µs                  | 21µs                       | 6700µs           | 463µs                   | 25µs                         |
+| (512, 512, 100) | 5.0ms                 | 0.47ms                      | 890ms           | not possible                       | 1.5ms                        |
