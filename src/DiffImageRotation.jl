@@ -66,7 +66,7 @@ julia> Zygote.gradient(f, arr)
 function imrotate(arr::AbstractArray{T, 3}, θ) where T
     @assert size(arr, 1) == size(arr, 2) "only quadratic arrays in dimension 1 and 2"
     # needed for rotation matrix
-    sinθ, cosθ = sincos(θ)
+    sinθ, cosθ = sincos(T(θ))
 
     # important variables
     mid = size(arr, 1) .÷ 2 + 1
@@ -80,14 +80,14 @@ function imrotate(arr::AbstractArray{T, 3}, θ) where T
     kernel! = imrotate_kernel!(backend)
     # launch kernel
     kernel!(out, arr, sinθ, cosθ, mid,
-            ndrange=(size(arr, 3), size(arr, 2), size(arr, 1)))
+            ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
 
 	return out
 end
 
 # KernelAbstractions specific
 @kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid)
-    k, j, i = @index(Global, NTuple)
+    i, j, k = @index(Global, NTuple)
     y = i - mid
     x = j - mid
     yrot = cosθ * y - sinθ * x
@@ -115,7 +115,7 @@ imrotate_adj(arr::AbstractArray{T, 2}, θ) where T =
 function imrotate_adj(arr::AbstractArray{T, 3}, θ) where T
     @assert size(arr, 1) == size(arr, 2) "only quadratic arrays in dimension 1 and 2"
     # needed for rotation matrix
-    sinθ, cosθ = sincos(θ)
+    sinθ, cosθ = sincos(T(θ))
     
     # important variables
     mid = size(arr, 1) .÷ 2 + 1
@@ -128,7 +128,7 @@ function imrotate_adj(arr::AbstractArray{T, 3}, θ) where T
     kernel! = imrotate_kernel_adj!(backend)
     # launch kernel
     kernel!(out, arr, sinθ, cosθ, mid,
-        ndrange=(size(arr, 3), size(arr, 2), size(arr, 1)))
+        ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
     
     return out
 end
@@ -137,7 +137,7 @@ end
 
 # KernelAbstractions specific
 @kernel function imrotate_kernel_adj!(out, arr, sinθ, cosθ, mid)
-    k, j, i = @index(Global, NTuple)
+    i, j, k = @index(Global, NTuple)
     y = i - mid
     x = j - mid
     yrot = cosθ * y - sinθ * x
