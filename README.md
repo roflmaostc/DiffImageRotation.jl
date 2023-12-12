@@ -27,3 +27,6 @@ To learn more about the interpolation scheme, see this [webpage](http://www.lept
 There is `imrotate` by [ImageTransformations.jl](https://github.com/JuliaImages/ImageTransformations.jl).
 For standard image processing rather use this. It has better handling, way more options and is faster on CPUs.
 But, it doesn't run with `CuArrays` and does not provide an adjoint/gradient rule.
+
+There is `rotate` by [FourierTools.jl](https://nanoimaging.de/FourierTools.jl/dev/rotate/).
+It's based on FFTs. It is based on a sinc interpolation.
