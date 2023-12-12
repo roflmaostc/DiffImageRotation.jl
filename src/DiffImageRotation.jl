@@ -70,9 +70,6 @@ function imrotate(arr::AbstractArray{T, 3}, θ) where T
 
     # important variables
     mid = size(arr, 1) .÷ 2 + 1
-    # we only rotate pixels inside this inner circle
-    # other regions are cut off
-    radius = mid - 2
 
     # out array
     out = similar(arr)
@@ -82,32 +79,33 @@ function imrotate(arr::AbstractArray{T, 3}, θ) where T
     backend = get_backend(arr)
     kernel! = imrotate_kernel!(backend)
     # launch kernel
-    kernel!(out, arr, sinθ, cosθ, mid, radius,
+    kernel!(out, arr, sinθ, cosθ, mid,
             ndrange=(size(arr, 3), size(arr, 2), size(arr, 1)))
 
 	return out
 end
 
 # KernelAbstractions specific
-@kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid, radius)
+@kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid)
     k, j, i = @index(Global, NTuple)
     y = i - mid
     x = j - mid
-    if y^2 + x^2 < radius ^2
-        yrot = cosθ * y - sinθ * x
-        xrot = sinθ * y + cosθ * x
-        yrotf = floor(yrot)
-        xrotf = floor(xrot)
-        inew = floor(Int, yrot) + mid
-        jnew = floor(Int, xrot) + mid
+    yrot = cosθ * y - sinθ * x
+    xrot = sinθ * y + cosθ * x
+    yrotf = floor(yrot)
+    xrotf = floor(xrot)
+    inew = floor(Int, yrot) + mid
+    jnew = floor(Int, xrot) + mid
+    
+    if 1 ≤ inew < size(out, 1) && 1 ≤ jnew < size(out, 2)
         xdiff = (xrot - xrotf)
         ydiff = (yrot - yrotf)
-		@inbounds out[i, j, k] = 
+        @inbounds out[i, j, k] = 
             ((1 - xdiff) * (1 - ydiff) * arr[inew, jnew, k]
             + (1 - xdiff) * ydiff * arr[inew + 1, jnew, k]
             + xdiff * (1 - ydiff) * arr[inew, jnew + 1, k] 
             + xdiff * ydiff * arr[inew + 1, jnew + 1, k])
-	end
+    end
 end
 
 
@@ -121,10 +119,6 @@ function imrotate_adj(arr::AbstractArray{T, 3}, θ) where T
     
     # important variables
     mid = size(arr, 1) .÷ 2 + 1
-    # we only rotate pixels inside this inner circle
-    # other regions are cut off
-    radius = mid - 2
-    
     # out array
     out = similar(arr)
     fill!(out, 0)
@@ -133,7 +127,7 @@ function imrotate_adj(arr::AbstractArray{T, 3}, θ) where T
     backend = get_backend(arr)
     kernel! = imrotate_kernel_adj!(backend)
     # launch kernel
-    kernel!(out, arr, sinθ, cosθ, mid, radius,
+    kernel!(out, arr, sinθ, cosθ, mid,
         ndrange=(size(arr, 3), size(arr, 2), size(arr, 1)))
     
     return out
@@ -142,18 +136,17 @@ end
 
 
 # KernelAbstractions specific
-@kernel function imrotate_kernel_adj!(out, arr, sinθ, cosθ, mid, radius)
+@kernel function imrotate_kernel_adj!(out, arr, sinθ, cosθ, mid)
     k, j, i = @index(Global, NTuple)
     y = i - mid
     x = j - mid
-    if y^2 + x^2 < radius ^2
-        yrot = cosθ * y - sinθ * x
-        xrot = sinθ * y + cosθ * x
-        yrotf = floor(yrot)
-        xrotf = floor(xrot)
-        inew = floor(Int, yrot) + mid
-        jnew = floor(Int, xrot) + mid
-        
+    yrot = cosθ * y - sinθ * x
+    xrot = sinθ * y + cosθ * x
+    yrotf = floor(yrot)
+    xrotf = floor(xrot)
+    inew = floor(Int, yrot) + mid
+    jnew = floor(Int, xrot) + mid
+    if 1 ≤ inew < size(out, 1) && 1 ≤ jnew < size(out, 2)
         o = arr[i, j, k]
         xdiff = (xrot - xrotf)
         ydiff = (yrot - yrotf)
@@ -161,7 +154,7 @@ end
         Atomix.@atomic out[inew + 1, jnew, k] += (1 - xdiff) * ydiff * o
         Atomix.@atomic out[inew, jnew + 1, k] += xdiff * (1 - ydiff) * o
         Atomix.@atomic out[inew + 1, jnew + 1, k] += xdiff * ydiff * o
-        end
+    end
 end
 
 function ChainRulesCore.rrule(imrotate, array, θ)

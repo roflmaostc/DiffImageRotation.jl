@@ -5,7 +5,11 @@ using Zygote, FiniteDifferences, ImageTransformations
 
 
 @testset "DiffImageRotation.jl" begin
+    @testset "SImple test" begin
+        arr = zeros((6, 6)); arr[3:4, 4] .= 1;
+        @test all(imrotate(arr, deg2rad(45)) .≈ [0.0 0.0 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.29289321881345254 0.585786437626905 0.0; 0.0 0.0 0.08578643762690495 1.0 0.2928932188134524 0.0; 0.0 0.0 0.0 0.08578643762690495 0.0 0.0; 0.0 0.0 0.0 0.0 0.0 0.0])
 
+    end
 
     @testset "Compare with ImageTransformations" begin
         arr = zeros((51, 51))
@@ -60,5 +64,8 @@ using Zygote, FiniteDifferences, ImageTransformations
         grad2 = Zygote.gradient(f, img2)[1];
         @test grad ≈ grad
     end
+
+
+
 
 end

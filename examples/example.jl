@@ -31,14 +31,14 @@ using DiffImageRotation
 # ╔═╡ eb7401ec-5eac-4587-8954-4ccdea89b667
 using Zygote
 
+# ╔═╡ c9722d3f-dcdf-4831-ae98-a2eb581a0fda
+TableOfContents()
+
 # ╔═╡ ef18be31-0b8c-43c1-97f8-c59da7740934
 imrotate = DiffImageRotation.imrotate
 
 # ╔═╡ 8eb351c6-5cf1-4e07-a0d0-8aae66f36301
 img = Float32.(testimage("cameraman"));
-
-# ╔═╡ c9722d3f-dcdf-4831-ae98-a2eb581a0fda
-TableOfContents()
 
 # ╔═╡ cc42f0d0-9438-4f27-a670-bd9e9101352d
 md"# Example
@@ -46,7 +46,6 @@ Visually the results are almost identical.
 
 Small difference are visible because *ImageTransformations* rotates around the `size(img) ./ 2 + 0.5` whereas *DiffImageRotation* rotates around `size(img) .÷ 2 + 1`.
 
-Also *DiffImageRotation* cuts everything outside the unit circle.
 *FourierTools.jl* uses a FFT based method.
 "
 
