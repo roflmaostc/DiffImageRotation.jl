@@ -63,6 +63,12 @@ using Zygote, FiniteDifferences, ImageTransformations
         grad = FiniteDifferences.grad(central_fdm(5, 1), f, img2)[1]
         grad2 = Zygote.gradient(f, img2)[1];
         @test grad ≈ grad2
+
+
+        img2 = randn((20, 14, 3));
+        grad = FiniteDifferences.grad(central_fdm(5, 1), f, img2)[1]
+        grad2 = Zygote.gradient(f, img2)[1];
+        @test grad ≈ grad2
     end
 
 
