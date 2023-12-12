@@ -10,7 +10,7 @@ Further, it has registered adjoints with [ChainRulesCore.jl](https://github.com/
 Try it out with:
 ```julia
 # install package with typing ]
-julia>  ]add DiffImageRotation
+julia> ]add DiffImageRotation
 
 julia> using DiffImageRotation
 
@@ -19,6 +19,8 @@ julia> arr = zeros((32, 32)); zeros[15:19, 10:23] .= 1
 julia> imrotate(arr, rad2deg(45))
 ```
 
+
+To learn more about the interpolation scheme, see this [webpage](http://www.leptonica.org/rotation.html). We implement rotation by area mapping (RAM).
 
 ## Related Packages
 There is `imrotate` by [ImageTransformations.jl](https://github.com/JuliaImages/ImageTransformations.jl).
