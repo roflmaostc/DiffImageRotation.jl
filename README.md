@@ -14,9 +14,11 @@ julia> ]add DiffImageRotation
 
 julia> using DiffImageRotation
 
-julia> arr = zeros((32, 32)); zeros[15:19, 10:23] .= 1
+julia> arr = zeros((32, 32)); arr[15:19, 10:23] .= 1 
 
-julia> imrotate(arr, rad2deg(45))
+julia> imrotate(arr, rad2deg(45));
+
+julia> imrotate(arr, deg2rad(90));
 ```
 
 ![](examples/example.png)

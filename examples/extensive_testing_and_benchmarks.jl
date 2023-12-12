@@ -81,6 +81,15 @@ all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-5))
 # ╔═╡ 7e00fb11-c11d-4491-b173-07421aa6160f
 @benchmark (CUDA.@sync DiffImageRotation.imrotate_adj($img_c, deg2rad(45)))  evals=10 samples=10
 
+# ╔═╡ 95a1da23-c124-4dae-b3dc-4ace5e1d8727
+arr3 = zeros((32, 32)); arr3[15:19, 10:23] .= 1
+
+# ╔═╡ 47568e40-9165-4d87-88e3-73a26bb261dc
+DiffImageRotation.imrotate(arr3, rad2deg(45))
+
+# ╔═╡ da9b976e-938f-45a2-83f0-bb37a51bc8a9
+[simshow(arr3) simshow(ones(32,1)) simshow(DiffImageRotation.imrotate(arr3, rad2deg(45))) simshow(ones(32,1)) simshow(DiffImageRotation.imrotate(arr3, deg2rad(90)))]
+
 # ╔═╡ Cell order:
 # ╠═39c0575c-98f6-11ee-3560-6f0da1c69455
 # ╠═89b77660-a50d-42bd-a448-952a1bc8a3e1
@@ -105,3 +114,6 @@ all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-5))
 # ╠═0628346f-3d56-49a4-9470-079fbab67376
 # ╠═cdf1d103-e72d-4159-ae5f-bebeba51faeb
 # ╠═7e00fb11-c11d-4491-b173-07421aa6160f
+# ╠═95a1da23-c124-4dae-b3dc-4ace5e1d8727
+# ╠═47568e40-9165-4d87-88e3-73a26bb261dc
+# ╠═da9b976e-938f-45a2-83f0-bb37a51bc8a9
