@@ -24,7 +24,7 @@ julia> imrotate(arr, rad2deg(45));
 julia> imrotate(arr, deg2rad(90));
 
 # access the docs
-julia> ?imroate  
+julia> ?imrotate  
 ```
 
 ![](examples/example.png)
