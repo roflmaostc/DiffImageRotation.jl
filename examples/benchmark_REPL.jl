@@ -81,6 +81,35 @@ FourierTools
   892.931 ms (13209887 allocations: 1.09 GiB)
 CUDA FFT
   1.549 ms (88 allocations: 5.02 KiB)
+
+(2048, 2048)
+imrotate
+  2.484 ms (260 allocations: 16.02 MiB)
+  327.553 μs (108 allocations: 4.58 KiB)
+ImageTransformations
+  30.345 ms (3 allocations: 29.86 MiB)
+FourierTools
+  847.974 ms (99 allocations: 480.02 MiB)
+CUDA FFT
+  862.948 μs (88 allocations: 4.64 KiB)
+(256, 256)
+imrotate
+  75.802 μs (255 allocations: 276.81 KiB)
+  22.332 μs (81 allocations: 4.12 KiB)
+ImageTransformations
+  469.751 μs (3 allocations: 478.66 KiB)
+FourierTools
+  6.654 ms (87 allocations: 7.56 MiB)
+CUDA FFT
+  23.805 μs (85 allocations: 4.56 KiB)
+(512, 512, 100)
+imrotate
+  6.078 ms (255 allocations: 25.02 MiB)
+  484.408 μs (82 allocations: 4.06 KiB)
+FourierTools
+  810.206 ms (13209887 allocations: 1.09 GiB)
+CUDA FFT
+  1.547 ms (88 allocations: 5.02 KiB)
 """
 
 nothing
