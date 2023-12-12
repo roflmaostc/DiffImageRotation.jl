@@ -3,7 +3,7 @@
 This package serves only one purpose.
 To provide a bilinear interpolation based image rotation which works with CUDA and multithreaded CPUs
 (thanks to [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl)).
-It can rotate images but also 3D arrays with a batch dimension.
+It can rotate images but also 3D arrays with a trailing batch dimension.
 
 Further, it has registered adjoints with [ChainRulesCore.jl](https://github.com/JuliaDiff/ChainRulesCore.jl).
 
