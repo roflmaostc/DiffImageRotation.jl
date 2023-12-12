@@ -22,4 +22,4 @@ julia> imrotate(arr, rad2deg(45))
 ## Related Packages
 There is `imrotate` by [ImageTransformations.jl](https://github.com/JuliaImages/ImageTransformations.jl).
 For standard image processing rather use this. It has better handling, way more options and is faster on CPUs.
-But, it doesn't run with `CuArrays` and does not provide a adjoint/gradient rule.
+But, it doesn't run with `CuArrays` and does not provide an adjoint/gradient rule.
