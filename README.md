@@ -22,7 +22,7 @@ julia> arr = zeros((32, 32)); arr[15:19, 10:23] .= 1
 
 julia> imrotate(arr, rad2deg(45));
 
-julia> imrotate(arr, deg2rad(90));
+julia> imrotate(arr, rad2deg(90));
 
 # access the docs
 julia> ?imrotate  
