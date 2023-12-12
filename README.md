@@ -41,7 +41,7 @@ It's based on FFTs. It is based on a sinc interpolation.
 
 
 ## Benchmarks
-|                 | DiffImageRotations.jl | CUDA DiffImageRotations.jl | FourierTools.jl | ImageTransformations.jl | CUDA FFT (as CUDA reference) |
+|                 | DiffImageRotation.jl | CUDA DiffImageRotation.jl | FourierTools.jl | ImageTransformations.jl | CUDA FFT (as CUDA reference) |
 |-----------------|-----------------------|----------------------------|-----------------|-------------------------|------------------------------|
 | (2048, 2048)    | 2.4ms                 | 0.32ms                      | 860ms           | 31ms                    | 0.86ms                        |
 | (256, 256)      | 65µs                  | 21µs                       | 6700µs           | 463µs                   | 25µs                         |
