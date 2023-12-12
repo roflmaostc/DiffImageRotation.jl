@@ -107,13 +107,13 @@ end
 		inew = floor(Int, yrot) + mid
 		jnew = floor(Int, xrot) + mid
 
-        o = arr[i, j]
+        o = arr[i, j, k]
         xdiff = (xrot - xrotf)
         ydiff = (yrot - yrotf)
-        Atomix.@atomic out[inew, jnew] += (1 - xdiff) * (1 - ydiff) * o
-        Atomix.@atomic out[inew + 1, jnew] += (1 - xdiff) * ydiff * o
-        Atomix.@atomic out[inew, jnew + 1] += xdiff * (1 - ydiff) * o
-        Atomix.@atomic out[inew + 1, jnew + 1] += xdiff * ydiff * o
+        Atomix.@atomic out[inew, jnew, k] += (1 - xdiff) * (1 - ydiff) * o
+        Atomix.@atomic out[inew + 1, jnew, k] += (1 - xdiff) * ydiff * o
+        Atomix.@atomic out[inew, jnew + 1, k] += xdiff * (1 - ydiff) * o
+        Atomix.@atomic out[inew + 1, jnew + 1, k] += xdiff * ydiff * o
 	end
 end
 

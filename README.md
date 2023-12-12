@@ -19,6 +19,7 @@ julia> arr = zeros((32, 32)); zeros[15:19, 10:23] .= 1
 julia> imrotate(arr, rad2deg(45))
 ```
 
+![](examples/example.png)
 
 To learn more about the interpolation scheme, see this [webpage](http://www.leptonica.org/rotation.html). We implement rotation by area mapping (RAM).
 

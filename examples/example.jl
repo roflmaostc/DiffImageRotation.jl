@@ -28,11 +28,17 @@ using KernelAbstractions, CUDA, TestImages, FileIO, ImageShow, ImageTransformati
 # ╔═╡ cd42e1cc-66e3-43a7-9cc9-2adb02a4e363
 using DiffImageRotation
 
+# ╔═╡ eb7401ec-5eac-4587-8954-4ccdea89b667
+using Zygote
+
 # ╔═╡ ef18be31-0b8c-43c1-97f8-c59da7740934
 imrotate = DiffImageRotation.imrotate
 
 # ╔═╡ 8eb351c6-5cf1-4e07-a0d0-8aae66f36301
 img = Float32.(testimage("cameraman"));
+
+# ╔═╡ c9722d3f-dcdf-4831-ae98-a2eb581a0fda
+TableOfContents()
 
 # ╔═╡ cc42f0d0-9438-4f27-a670-bd9e9101352d
 md"# Example
@@ -44,6 +50,9 @@ Also *DiffImageRotation* cuts everything outside the unit circle.
 *FourierTools.jl* uses a FFT based method.
 "
 
+# ╔═╡ 35415865-4d13-4636-8957-5da0ba62a7ea
+[simshow(img) simshow(imrotate(img, deg2rad(45)))];
+
 # ╔═╡ 70f74f6d-42c9-40ce-9652-ec1ea4e614e4
 @bind angle Slider(0:360, show_value=true)
 
@@ -52,6 +61,9 @@ DiffImageRotation.imrotate(img, deg2rad(angle));
 
 # ╔═╡ 4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
 [simshow(DiffImageRotation.imrotate(img, deg2rad(angle))) simshow(ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)) simshow(FourierTools.rotate(img, deg2rad.(angle)))]
+
+# ╔═╡ d6621d32-24b1-4e0b-84e3-4e017386fbd5
+
 
 # ╔═╡ dd0f988f-ab99-43ac-8e22-21bec828b47e
 res = (select_region(DiffImageRotation.imrotate(img, deg2rad(angle)), new_size=(250, 250)) ≈ select_region(ImageTransformations.imrotate(img[begin+1:end, begin+1:end], deg2rad(angle), axes(img[begin+1:end, begin+1:end]), fillvalue=0), new_size=(250, 250)))
@@ -64,7 +76,7 @@ $(PlutoTest.@test res)
 
 # ╔═╡ 9bc17466-8a9b-4ffd-8898-8ed00d2e385e
 md"# CUDA example
-An immediate speedup can be observed
+An immediate speedup can be observed. Rerun the cells for more accuracy.
 "
 
 # ╔═╡ 1a5155ac-cc8d-41fd-bbc2-8d77c1d174b7
@@ -86,7 +98,9 @@ img_c = CuArray(img);
 simshow(Array(imrotate(img_c, deg2rad(45))))
 
 # ╔═╡ 67cc89f7-0e29-4bf4-bff7-f20cac12a14e
-md"# More drastical for bigger 3D arrays"
+md"# More drastical for bigger 3D arrays
+Rerun the cells for accurate results
+"
 
 # ╔═╡ d19cb77b-21c8-40bd-a84d-6a1260911241
 arr = randn(Float32, (1024, 1024, 64));
@@ -100,16 +114,31 @@ arr_c = CuArray(arr);
 # ╔═╡ 14d1497e-3673-436f-a371-eb7ce58d9843
 @time CUDA.@sync imrotate(arr_c, deg2rad(45));
 
+# ╔═╡ 3163bac5-ab32-4272-b51e-66e8fc940d6d
+md"# Using Zygote and gradient"
+
+# ╔═╡ bc1411b6-d119-4ad8-92f4-39d8c3ff812b
+f(x) = sum(abs2.(imrotate(x, 35)))
+
+# ╔═╡ 2222e4ed-ec5b-466f-9168-59090897771e
+@time f(arr)
+
+# ╔═╡ 93776317-931a-44a7-a2e7-38bd7cb478f2
+@time Zygote.gradient(f, arr)
+
 # ╔═╡ Cell order:
 # ╠═1baea98c-98f4-11ee-0d37-1de73460bc8b
 # ╠═d50e7470-000a-47fe-8ce5-b03e0ec01287
+# ╟─c9722d3f-dcdf-4831-ae98-a2eb581a0fda
 # ╠═cd42e1cc-66e3-43a7-9cc9-2adb02a4e363
 # ╠═ef18be31-0b8c-43c1-97f8-c59da7740934
 # ╠═8eb351c6-5cf1-4e07-a0d0-8aae66f36301
 # ╟─cc42f0d0-9438-4f27-a670-bd9e9101352d
+# ╟─35415865-4d13-4636-8957-5da0ba62a7ea
 # ╟─70f74f6d-42c9-40ce-9652-ec1ea4e614e4
 # ╠═49c86f22-0961-47db-9534-6b01e7b412d2
 # ╠═4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
+# ╠═d6621d32-24b1-4e0b-84e3-4e017386fbd5
 # ╟─f81d587d-c5c7-4e5d-82e6-87bb1bc950db
 # ╟─dd0f988f-ab99-43ac-8e22-21bec828b47e
 # ╟─9bc17466-8a9b-4ffd-8898-8ed00d2e385e
@@ -124,3 +153,8 @@ arr_c = CuArray(arr);
 # ╠═9f5cf42e-6ffa-4611-88d0-41227d0344d7
 # ╠═dac9ea4c-ae16-4ae0-b8b6-332447d33529
 # ╠═14d1497e-3673-436f-a371-eb7ce58d9843
+# ╟─3163bac5-ab32-4272-b51e-66e8fc940d6d
+# ╠═eb7401ec-5eac-4587-8954-4ccdea89b667
+# ╠═bc1411b6-d119-4ad8-92f4-39d8c3ff812b
+# ╠═2222e4ed-ec5b-466f-9168-59090897771e
+# ╠═93776317-931a-44a7-a2e7-38bd7cb478f2
