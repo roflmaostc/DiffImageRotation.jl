@@ -9,7 +9,8 @@ Further, it has registered adjoints with [ChainRulesCore.jl](https://github.com/
 
 Try it out with:
 ```julia
-julia>  ] add DiffImageRotation
+# install package with typing ]
+julia>  ]add DiffImageRotation
 
 julia> using DiffImageRotation
 
