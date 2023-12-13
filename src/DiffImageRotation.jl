@@ -4,8 +4,8 @@ using KernelAbstractions, ChainRulesCore, Atomix
 
 export imrotate
 
-imrotate(arr::AbstractArray{T, 2}, θ) where T = 
-    view(imrotate(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ), :, :, 1)
+imrotate(arr::AbstractArray{T, 2}, θ; mid=size(arr) .÷ 2 .+ 1) where T = 
+    view(imrotate(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; mid), :, :, 1)
 
 """
     imrotate(arr::AbstractArray, θ)
@@ -63,12 +63,12 @@ julia> Zygote.gradient(f, arr)
 
 ```
 """
-function imrotate(arr::AbstractArray{T, 3}, θ) where T
+function imrotate(arr::AbstractArray{T, 3}, θ; mid=size(arr) .÷ 2 .+ 1) where T
     # needed for rotation matrix
     sinθ, cosθ = sincos(T(θ))
 
     # important variables
-    mid = size(arr, 1) .÷ 2 + 1
+    mid = mid
 
     # out array
     out = similar(arr)
@@ -87,14 +87,14 @@ end
 # KernelAbstractions specific
 @kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid, imax, jmax)
     i, j, k = @index(Global, NTuple)
-    y = i - mid
-    x = j - mid
+    y = i - mid[1]
+    x = j - mid[2]
     yrot = cosθ * y - sinθ * x
     xrot = sinθ * y + cosθ * x
     yrotf = floor(yrot)
     xrotf = floor(xrot)
-    inew = floor(Int, yrot) + mid
-    jnew = floor(Int, xrot) + mid
+    inew = floor(Int, yrot) + mid[1]
+    jnew = floor(Int, xrot) + mid[2]
     
     if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax 
         xdiff = (xrot - xrotf)
@@ -114,15 +114,15 @@ end
 end
 
 
-imrotate_adj(arr::AbstractArray{T, 2}, θ) where T = 
-    view(imrotate_adj(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ), :, :, 1)
+imrotate_adj(arr::AbstractArray{T, 2}, θ; mid=size(arr) .÷ 2 .+ 1) where T = 
+    view(imrotate_adj(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; mid), :, :, 1)
 
-function imrotate_adj(arr::AbstractArray{T, 3}, θ) where T
+function imrotate_adj(arr::AbstractArray{T, 3}, θ; mid=size(arr) .÷ 2 .+ 1) where T
     # needed for rotation matrix
     sinθ, cosθ = sincos(T(θ))
     
     # important variables
-    mid = size(arr, 1) .÷ 2 + 1
+    mid = mid 
     # out array
     out = similar(arr)
     fill!(out, 0)
@@ -142,14 +142,14 @@ end
 # KernelAbstractions specific
 @kernel function imrotate_kernel_adj!(out, arr, sinθ, cosθ, mid, imax, jmax)
     i, j, k = @index(Global, NTuple)
-    y = i - mid
-    x = j - mid
+    y = i - mid[1]
+    x = j - mid[2]
     yrot = cosθ * y - sinθ * x
     xrot = sinθ * y + cosθ * x
     yrotf = floor(yrot)
     xrotf = floor(xrot)
-    inew = floor(Int, yrot) + mid
-    jnew = floor(Int, xrot) + mid
+    inew = floor(Int, yrot) + mid[1]
+    jnew = floor(Int, xrot) + mid[2]
     if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax
         o = arr[i, j, k]
         xdiff = (xrot - xrotf)
