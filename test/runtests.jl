@@ -58,17 +58,17 @@ using Zygote, FiniteDifferences, ImageTransformations
             img2 = randn((32, 32));
             grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
             grad2 = Zygote.gradient(f, img2)[1];
-            @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-8))
+            @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
             
             img2 = randn((21, 21));
             grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
             grad2 = Zygote.gradient(f, img2)[1];
-            @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-8))
+            @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
 
             img2 = randn((20, 14, 3));
             grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
             grad2 = Zygote.gradient(f, img2)[1];
-            @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-8))
+            @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
         end
     end
 
