@@ -5,7 +5,6 @@ using Interpolations
 using Zygote, FiniteDifferences, ImageTransformations
 
 
-@testset "DiffImageRotation.jl" begin
     @testset "SImple test" begin
         arr = zeros((6, 6)); arr[3:4, 4] .= 1;
         @test all(DiffImageRotation.imrotate(arr, deg2rad(45)) .≈ [0.0 0.0 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.29289321881345254 0.585786437626905 0.0; 0.0 0.0 0.08578643762690495 1.0 0.2928932188134524 0.0; 0.0 0.0 0.0 0.08578643762690495 0.0 0.0; 0.0 0.0 0.0 0.0 0.0 0.0])
@@ -41,11 +40,11 @@ using Zygote, FiniteDifferences, ImageTransformations
         arr[6, 6] = 1
 
         for method in [:bilinear, :nearest]
-            @test arr ≈ DiffImageRotation.imrotate(arr, deg2rad(0); method)
-            @test arr ≈ DiffImageRotation.imrotate(arr, deg2rad(90); method)
-            @test arr ≈ DiffImageRotation.imrotate(arr, deg2rad(180); method)
-            @test arr ≈ DiffImageRotation.imrotate(arr, deg2rad(270); method)
-            @test arr ≈ DiffImageRotation.imrotate(arr, deg2rad(360); method)
+            @test all(.≈(arr , DiffImageRotation.imrotate(arr, deg2rad(0); method)))
+            @test all(.≈(arr , DiffImageRotation.imrotate(arr, deg2rad(90); method)))
+            @test all(.≈(arr , DiffImageRotation.imrotate(arr, deg2rad(180); method)))
+            @test all(.≈(arr , DiffImageRotation.imrotate(arr, deg2rad(270); method)))
+            @test all(.≈(arr , DiffImageRotation.imrotate(arr, deg2rad(360); method)))
         end
     end
 
@@ -55,6 +54,7 @@ using Zygote, FiniteDifferences, ImageTransformations
         for method in [:nearest, :bilinear]
             f(x) = sum(abs2.(DiffImageRotation.imrotate(x, deg2rad(137); method)))
        
+            @show method
             img2 = randn((32, 32));
             grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
             grad2 = Zygote.gradient(f, img2)[1];
@@ -75,4 +75,4 @@ using Zygote, FiniteDifferences, ImageTransformations
 
 
 
-end
+

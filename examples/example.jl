@@ -38,7 +38,10 @@ TableOfContents()
 imrotate = DiffImageRotation.imrotate
 
 # ╔═╡ 8eb351c6-5cf1-4e07-a0d0-8aae66f36301
-img = Float32.(testimage("cameraman"));
+img = Float32.(testimage("cameraman"))[begin+1:end, begin+1:end];
+
+# ╔═╡ 1e7a3fa5-642e-40cf-8a07-0da9e1808d1d
+
 
 # ╔═╡ cc42f0d0-9438-4f27-a670-bd9e9101352d
 md"# Example
@@ -61,17 +64,8 @@ DiffImageRotation.imrotate(img, deg2rad(angle));
 # ╔═╡ 4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
 [simshow(DiffImageRotation.imrotate(img, deg2rad(angle))) simshow(ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)) simshow(FourierTools.rotate(img, deg2rad.(angle)))]
 
-# ╔═╡ d6621d32-24b1-4e0b-84e3-4e017386fbd5
-
-
-# ╔═╡ dd0f988f-ab99-43ac-8e22-21bec828b47e
-res = (select_region(DiffImageRotation.imrotate(img, deg2rad(angle)), new_size=(250, 250)) ≈ select_region(ImageTransformations.imrotate(img[begin+1:end, begin+1:end], deg2rad(angle), axes(img[begin+1:end, begin+1:end]), fillvalue=0), new_size=(250, 250)))
-
-# ╔═╡ f81d587d-c5c7-4e5d-82e6-87bb1bc950db
-md"""## Compare to ImageTransformations.imrotate
-In case of odd size arrays, the results match.
-$(PlutoTest.@test res)
-"""
+# ╔═╡ 0114ae74-cbb3-4778-9cb8-6985b5760996
+simshow(DiffImageRotation.imrotate(img, deg2rad(angle)) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0))
 
 # ╔═╡ 9bc17466-8a9b-4ffd-8898-8ed00d2e385e
 md"# CUDA example
@@ -132,14 +126,13 @@ f(x) = sum(abs2.(imrotate(x, 35)))
 # ╠═cd42e1cc-66e3-43a7-9cc9-2adb02a4e363
 # ╠═ef18be31-0b8c-43c1-97f8-c59da7740934
 # ╠═8eb351c6-5cf1-4e07-a0d0-8aae66f36301
+# ╠═1e7a3fa5-642e-40cf-8a07-0da9e1808d1d
 # ╟─cc42f0d0-9438-4f27-a670-bd9e9101352d
 # ╟─35415865-4d13-4636-8957-5da0ba62a7ea
-# ╠═70f74f6d-42c9-40ce-9652-ec1ea4e614e4
 # ╠═49c86f22-0961-47db-9534-6b01e7b412d2
 # ╠═4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
-# ╠═d6621d32-24b1-4e0b-84e3-4e017386fbd5
-# ╟─f81d587d-c5c7-4e5d-82e6-87bb1bc950db
-# ╟─dd0f988f-ab99-43ac-8e22-21bec828b47e
+# ╠═70f74f6d-42c9-40ce-9652-ec1ea4e614e4
+# ╠═0114ae74-cbb3-4778-9cb8-6985b5760996
 # ╟─9bc17466-8a9b-4ffd-8898-8ed00d2e385e
 # ╠═1a5155ac-cc8d-41fd-bbc2-8d77c1d174b7
 # ╠═26ed1552-ba9f-4203-af54-ad8b60e3572d

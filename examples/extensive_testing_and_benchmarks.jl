@@ -95,10 +95,16 @@ function multirot(img, N)
 end
 
 # ╔═╡ 6d5326de-9b90-41a9-b66b-8a141e6ee999
-img3 = Float32.(testimage("resolution_test_512"));
+img3 = Float32.(testimage("cameraman"));
 
 # ╔═╡ c9485ccd-674c-4f12-aed9-b7e688524f93
-simshow(multirot(img3, 20))
+simshow(multirot(img3, 1))
+
+# ╔═╡ 4840be3d-651d-4c4b-9e72-1af98d1ab304
+@bind angle5 Slider(0:360, show_value=true)
+
+# ╔═╡ 9de6d381-dddd-42b1-97bb-c83baaf0edc4
+simshow(DiffImageRotation.imrotate(img3, deg2rad(angle5)))
 
 # ╔═╡ 14b0cc66-734f-409d-8317-5b02d5dda183
 md"# Adjoint"
@@ -172,6 +178,39 @@ simshow(DiffImageRotation.imrotate(arr3, deg2rad(angle4), method=:nearest))
 using DiffImageRotation
   ╠═╡ =#
 
+# ╔═╡ c99c9b2a-3034-4bce-acb8-688b1539288f
+deg2rad(360) - 2π
+
+# ╔═╡ 7fb37abf-46f3-4647-8527-5e684ac67f93
+Revise.retry()
+
+# ╔═╡ b07eb11a-8521-4dde-9d6e-7a77344555fd
+imrotate([1 2 3; 4 5 6; 7 8 9.0], π)
+
+# ╔═╡ f34cfebc-7b11-4aa3-a732-4483e8629ef2
+g = rand((6,6)...)
+
+# ╔═╡ 718bc501-28c1-426a-a5d0-b57a5302a6dd
+simshow(imrotate(g, deg2rad(180), method=:bilinear))
+
+# ╔═╡ 3f8fe433-dfdf-4ce0-9470-d2093ed050b3
+Revise.retry()
+
+# ╔═╡ 1313f130-80af-4200-84d4-48aedf0ebb89
+sin(deg2rad(180))
+
+# ╔═╡ 0eebb8b2-6be3-497e-b261-81b1974f3772
+simshow(ImageTransformations.imrotate(g, deg2rad(90)))
+
+# ╔═╡ 874808b4-5176-43e2-84fd-cfbda999ff3d
+simshow(reverse(reverse(g, dims=(1,)), dims=(2,)))
+
+# ╔═╡ 30b0425d-8f28-4a26-8899-6bb03320b822
+res = (select_region(DiffImageRotation.imrotate(img, deg2rad(angle)), new_size=(250, 250)) ≈ select_region(ImageTransformations.imrotate(img[begin:end, begin:end], deg2rad(angle), axes(img[begin:end, begin:end]), fillvalue=0), new_size=(250, 250)))
+
+# ╔═╡ 8814981e-393d-4dec-8b97-d383898ef945
+simshow(DiffImageRotation.imrotate(img, deg2rad(angle)) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0))
+
 # ╔═╡ Cell order:
 # ╠═39c0575c-98f6-11ee-3560-6f0da1c69455
 # ╠═89b77660-a50d-42bd-a448-952a1bc8a3e1
@@ -189,6 +228,8 @@ using DiffImageRotation
 # ╠═9814c45f-b9d6-4d9a-9253-dda9a3410531
 # ╠═6d5326de-9b90-41a9-b66b-8a141e6ee999
 # ╠═c9485ccd-674c-4f12-aed9-b7e688524f93
+# ╠═4840be3d-651d-4c4b-9e72-1af98d1ab304
+# ╠═9de6d381-dddd-42b1-97bb-c83baaf0edc4
 # ╟─14b0cc66-734f-409d-8317-5b02d5dda183
 # ╠═6c441f76-3e60-4330-9419-21105fa8c34c
 # ╠═a497c753-e2ef-4a63-bad2-aa4e44b1d0f6
@@ -211,3 +252,14 @@ using DiffImageRotation
 # ╠═44ab1aac-b977-42b4-982e-74d8911d1f33
 # ╠═0cc4866e-30e2-4260-bd7d-c41afdd68111
 # ╠═cd22b8d7-7cf5-40b3-a68d-3b8bae7ec6cf
+# ╠═c99c9b2a-3034-4bce-acb8-688b1539288f
+# ╠═7fb37abf-46f3-4647-8527-5e684ac67f93
+# ╠═b07eb11a-8521-4dde-9d6e-7a77344555fd
+# ╠═f34cfebc-7b11-4aa3-a732-4483e8629ef2
+# ╠═718bc501-28c1-426a-a5d0-b57a5302a6dd
+# ╠═3f8fe433-dfdf-4ce0-9470-d2093ed050b3
+# ╠═1313f130-80af-4200-84d4-48aedf0ebb89
+# ╠═0eebb8b2-6be3-497e-b261-81b1974f3772
+# ╠═874808b4-5176-43e2-84fd-cfbda999ff3d
+# ╠═30b0425d-8f28-4a26-8899-6bb03320b822
+# ╠═8814981e-393d-4dec-8b97-d383898ef945
