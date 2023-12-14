@@ -53,7 +53,7 @@ Small difference are visible because *ImageTransformations* rotates around the `
 [simshow(img) simshow(imrotate(img, deg2rad(45)))];
 
 # ╔═╡ 70f74f6d-42c9-40ce-9652-ec1ea4e614e4
-@bind angle Slider(0:360, show_value=true)
+@bind angle Slider(0:361, show_value=true)
 
 # ╔═╡ 49c86f22-0961-47db-9534-6b01e7b412d2
 DiffImageRotation.imrotate(img, deg2rad(angle));
@@ -134,7 +134,7 @@ f(x) = sum(abs2.(imrotate(x, 35)))
 # ╠═8eb351c6-5cf1-4e07-a0d0-8aae66f36301
 # ╟─cc42f0d0-9438-4f27-a670-bd9e9101352d
 # ╟─35415865-4d13-4636-8957-5da0ba62a7ea
-# ╟─70f74f6d-42c9-40ce-9652-ec1ea4e614e4
+# ╠═70f74f6d-42c9-40ce-9652-ec1ea4e614e4
 # ╠═49c86f22-0961-47db-9534-6b01e7b412d2
 # ╠═4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
 # ╠═d6621d32-24b1-4e0b-84e3-4e017386fbd5

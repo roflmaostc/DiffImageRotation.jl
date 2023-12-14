@@ -4,8 +4,8 @@ using KernelAbstractions, ChainRulesCore, Atomix
 
 export imrotate
 
-imrotate(arr::AbstractArray{T, 2}, θ; mid=size(arr) .÷ 2 .+ 1) where T = 
-    view(imrotate(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; mid), :, :, 1)
+imrotate(arr::AbstractArray{T, 2}, θ; mid=size(arr) .÷ 2 .+ 1, method=:bilinear) where T = 
+    view(imrotate(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; mid, method), :, :, 1)
 
 """
     imrotate(arr::AbstractArray, θ)
@@ -63,12 +63,9 @@ julia> Zygote.gradient(f, arr)
 
 ```
 """
-function imrotate(arr::AbstractArray{T, 3}, θ; mid=size(arr) .÷ 2 .+ 1) where T
+function imrotate(arr::AbstractArray{T, 3}, θ; method=:bilinear, mid=size(arr) .÷ 2 .+ 1) where T
     # needed for rotation matrix
     sinθ, cosθ = sincos(T(θ))
-
-    # important variables
-    mid = mid
 
     # out array
     out = similar(arr)
@@ -76,13 +73,36 @@ function imrotate(arr::AbstractArray{T, 3}, θ; mid=size(arr) .÷ 2 .+ 1) where 
 
     # KernelAbstractions specific
     backend = get_backend(arr)
-    kernel! = imrotate_kernel!(backend)
-    # launch kernel
-    kernel!(out, arr, sinθ, cosθ, mid, size(arr, 1), size(arr, 2),
-            ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
-
+    if method == :bilinear
+        kernel! = imrotate_kernel!(backend)
+        # launch kernel
+        kernel!(out, arr, sinθ, cosθ, mid, size(arr, 1), size(arr, 2),
+                ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
+    elseif method == :nearest
+        kernel! = imrotate_kernel_nearest!(backend)
+        # launch kernel
+        kernel!(out, arr, sinθ, cosθ, mid, size(arr, 1), size(arr, 2),
+                ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
+    else 
+        throw(ArgumentError("No interpolation method such as $method"))
+    end
 	return out
 end
+
+@kernel function imrotate_kernel_nearest!(out, arr, sinθ, cosθ, mid, imax, jmax)
+    i, j, k = @index(Global, NTuple)
+    y = i - mid[1]
+    x = j - mid[2]
+    yrot = cosθ * y - sinθ * x
+    xrot = sinθ * y + cosθ * x
+    inew = round(Int, yrot) + mid[1]
+    jnew = round(Int, xrot) + mid[2]
+
+    if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax 
+        @inbounds out[i, j, k] = arr[inew, jnew, k]
+    end
+end
+
 
 # KernelAbstractions specific
 @kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid, imax, jmax)
@@ -114,27 +134,34 @@ end
 end
 
 
-imrotate_adj(arr::AbstractArray{T, 2}, θ; mid=size(arr) .÷ 2 .+ 1) where T = 
-    view(imrotate_adj(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; mid), :, :, 1)
+imrotate_adj(arr::AbstractArray{T, 2}, θ; method=:bilinear,  mid=size(arr) .÷ 2 .+ 1) where T = 
+    view(imrotate_adj(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; method, mid), :, :, 1)
 
-function imrotate_adj(arr::AbstractArray{T, 3}, θ; mid=size(arr) .÷ 2 .+ 1) where T
+function imrotate_adj(arr::AbstractArray{T, 3}, θ; method=:bilinear, mid=size(arr) .÷ 2 .+ 1) where T
     # needed for rotation matrix
     sinθ, cosθ = sincos(T(θ))
     
-    # important variables
-    mid = mid 
     # out array
     out = similar(arr)
     fill!(out, 0)
     
     # KernelAbstractions specific
     backend = get_backend(arr)
-    kernel! = imrotate_kernel_adj!(backend)
-    # launch kernel
-    kernel!(out, arr, sinθ, cosθ, mid, size(arr, 1), size(arr, 2),
-        ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
-    
-    return out
+
+    if method == :bilinear
+        kernel! = imrotate_kernel_adj!(backend)
+        # launch kernel
+        kernel!(out, arr, sinθ, cosθ, mid, size(arr, 1), size(arr, 2),
+                ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
+    elseif method == :nearest
+        # just need to change θ -> -θ
+        kernel! = imrotate_kernel_nearest_adj!(backend)
+        kernel!(out, arr, sinθ, cosθ, mid, size(arr, 1), size(arr, 2),
+                ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
+    else 
+        throw(ArgumentError("No interpolation method such as $method"))
+    end
+	return out
 end
 
 
@@ -164,11 +191,31 @@ end
     end
 end
 
-function ChainRulesCore.rrule(imrotate, array, θ)
-    res = imrotate(array, θ)
+
+@kernel function imrotate_kernel_nearest_adj!(out, arr, sinθ, cosθ, mid, imax, jmax)
+    i, j, k = @index(Global, NTuple)
+    y = i - mid[1]
+    x = j - mid[2]
+    yrot = cosθ * y - sinθ * x
+    xrot = sinθ * y + cosθ * x
+    inew = round(Int, yrot) + mid[1]
+    jnew = round(Int, xrot) + mid[2]
+
+    if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax 
+        Atomix.@atomic out[inew, jnew, k] += arr[i, j, k]
+    end
+end
+
+
+
+
+# is this rrule good? 
+# no @thunk and @unthunk
+function ChainRulesCore.rrule(::typeof(imrotate), array, θ; method=:bilinear, mid=size(array) .÷ 2 .+ 1)
+    res = imrotate(array, θ; method, mid)
     function pb_rotate(ȳ)
         f̄ = NoTangent()
-        ad = imrotate_adj(ȳ, θ)
+        ad = imrotate_adj(ȳ, θ; method, mid)
         return NoTangent(), ad, NoTangent()
     end    
 	return res, pb_rotate
