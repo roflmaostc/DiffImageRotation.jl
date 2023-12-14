@@ -67,6 +67,12 @@ DiffImageRotation.imrotate(img, deg2rad(angle));
 # ╔═╡ 0114ae74-cbb3-4778-9cb8-6985b5760996
 simshow(DiffImageRotation.imrotate(img, deg2rad(angle)) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0))
 
+# ╔═╡ ea258ed5-b13b-4aae-8502-4dffdcf82c11
+r = all(select_region(.≈(1 .+ DiffImageRotation.imrotate(img, deg2rad(angle)), 1 .+ ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0), rtol=1f-5), new_size=(100, 100)))
+
+# ╔═╡ 2e81e47d-b57d-4107-8cf8-654818f0c7ca
+PlutoTest.@test r
+
 # ╔═╡ 9bc17466-8a9b-4ffd-8898-8ed00d2e385e
 md"# CUDA example
 An immediate speedup can be observed. Rerun the cells for more accuracy.
@@ -133,6 +139,8 @@ f(x) = sum(abs2.(imrotate(x, 35)))
 # ╠═4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
 # ╠═70f74f6d-42c9-40ce-9652-ec1ea4e614e4
 # ╠═0114ae74-cbb3-4778-9cb8-6985b5760996
+# ╟─2e81e47d-b57d-4107-8cf8-654818f0c7ca
+# ╟─ea258ed5-b13b-4aae-8502-4dffdcf82c11
 # ╟─9bc17466-8a9b-4ffd-8898-8ed00d2e385e
 # ╠═1a5155ac-cc8d-41fd-bbc2-8d77c1d174b7
 # ╠═26ed1552-ba9f-4203-af54-ad8b60e3572d
