@@ -4,20 +4,37 @@ using KernelAbstractions, ChainRulesCore, Atomix
 
 export imrotate
 
-# handle types correctly
-# and also rounding sometimes does weird things
-# so we reduce θ ∈ [0, π)
-function get_sin_cos(::Type{T}, θ) where T
-    K = promote_type(Float32, T)
-    θ2 = K(θ)
-    θ2 = mod(θ2, typeof(θ2)(2π))
-    sinθ, cosθ = sincos(θ2)
 
-    if θ2 ≥ π
-        sinθ, cosθ = -sin(θ2 -K(π)), cos(K(2π) - θ2)
-    end
+# this rotates the coordinates and either applies round(nearest neighbour)
+# or floor (:bilinear interpolation)
+function rotate_coordinates(sinθ, cosθ, i, j, mid, round_or_floor)
+    y = i - mid[1]
+    x = j - mid[2]
+    yrot = cosθ * y - sinθ * x + mid[1]
+    xrot = sinθ * y + cosθ * x + mid[2]
+    yrot_f = round_or_floor(yrot)
+    xrot_f = round_or_floor(xrot)
+    yrot_int = round_or_floor(Int, yrot)
+    xrot_int = round_or_floor(Int, xrot)
+    return yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int
+end
 
-    return sinθ, cosθ
+# helper function for bilinear
+function bilinear_helper(yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int, imax, jmax)
+        xdiff = (xrot - xrot_f)
+        xdiff_diff = 1 - xdiff
+        ydiff = (yrot - yrot_f)
+        ydiff_diff = 1 - ydiff
+        # in case we hit the boundary stripe, then we need to avoid out of bounds access
+        Δi = yrot_int != imax
+        Δj = xrot_int != jmax
+      
+        # we need to avoid that we access arr[0]
+        # in rare cases the rounding clips off values on the left and top border
+        # we still try to access them with this extra comparison
+        Δi_min = yrot_int == 0
+        Δj_min = xrot_int == 0
+        return Δi, Δj, Δi_min, Δj_min, ydiff, ydiff_diff, xdiff, xdiff_diff
 end
 
 
@@ -93,12 +110,13 @@ julia> Zygote.gradient(f, arr)
 """
 function imrotate(arr::AbstractArray{T, 3}, θ; method=:bilinear, mid=size(arr) .÷ 2 .+ 1) where T
     @assert (T <: Integer && method==:nearest || T <: AbstractFloat) "If the array has an Int eltype, only method=:nearest is supported"
+    @assert typeof(mid) <: Tuple "mid keyword has to be a tuple"
     # out array
     out = similar(arr)
     fill!(out, 0)
     # needed for rotation matrix
     
-    #sinθ, cosθ = get_sin_cos(T, θ)
+    mid = T.(mid)
     sinθ, cosθ = sincos(T(θ)) 
     # KernelAbstractions specific
     backend = get_backend(arr)
@@ -120,61 +138,39 @@ end
 
 @kernel function imrotate_kernel_nearest!(out, arr, sinθ, cosθ, mid, imax, jmax)
     i, j, k = @index(Global, NTuple)
-    y = i - mid[1]
-    x = j - mid[2]
-    yrot = cosθ * y - sinθ * x + mid[1]
-    xrot = sinθ * y + cosθ * x + mid[2]
-    inew = round(Int, yrot)
-    jnew = round(Int, xrot)
 
-    if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax 
-        @inbounds out[i, j, k] = arr[inew, jnew, k]
+    @inline _, _, _, _, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, mid, round) 
+    if 1 ≤ yrot_int ≤ imax && 1 ≤ xrot_int ≤ jmax
+        @inbounds out[i, j, k] = arr[yrot_int, xrot_int, k]
     end
 end
 
 
-# KernelAbstractions specific
 @kernel function imrotate_kernel!(out, arr, sinθ, cosθ, mid, imax, jmax)
     i, j, k = @index(Global, NTuple)
-    y = i - mid[1]
-    x = j - mid[2]
-    yrot = cosθ * y - sinθ * x + mid[1]
-    xrot = sinθ * y + cosθ * x + mid[2]
-    yrotf = floor(yrot)
-    xrotf = floor(xrot)
-    inew = floor(Int, yrot)
-    jnew = floor(Int, xrot)
     
-    if 0 ≤ inew ≤ imax && 0 ≤ jnew ≤ jmax 
-        xdiff = (xrot - xrotf)
-        xdiff_diff = 1 - xdiff
-        ydiff = (yrot - yrotf)
-        ydiff_diff = 1 - ydiff
-        # in case we hit the boundary stripe, then we need to avoid out of bounds access
-        Δi = inew != imax
-        Δj = jnew != jmax
-      
-        # we need to avoid that we access arr[0]
-        # in rare cases the rounding clips off values on the left and top border
-        # we still try to access them with this extra comparison
-        Δi_min = inew == 0
-        Δj_min = jnew == 0
+    @inline yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, mid, floor) 
+    if 0 ≤ yrot_int ≤ imax && 0 ≤ xrot_int ≤ jmax 
 
+        @inline Δi, Δj, Δi_min, Δj_min, ydiff, ydiff_diff, xdiff, xdiff_diff = 
+            bilinear_helper(yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int, imax, jmax)
         @inbounds out[i, j, k] = 
-             ( xdiff_diff * ydiff_diff * arr[inew + Δi_min,      jnew + Δj_min,      k]
-             + xdiff_diff * ydiff      * arr[inew + Δi, jnew + Δj_min,      k]
-             + xdiff      * ydiff_diff * arr[inew + Δi_min,      jnew + Δj, k] 
-             + xdiff      * ydiff      * arr[inew + Δi, jnew + Δj, k])
+            (   xdiff_diff  * ydiff_diff    * arr[yrot_int + Δi_min, xrot_int + Δj_min, k]
+             +  xdiff_diff  * ydiff         * arr[yrot_int + Δi,     xrot_int + Δj_min, k]
+             +  xdiff       * ydiff_diff    * arr[yrot_int + Δi_min, xrot_int + Δj,     k] 
+             +  xdiff       * ydiff         * arr[yrot_int + Δi,     xrot_int + Δj,     k])
     end
 end
 
 
+
+# adjoint functions
 imrotate_adj(arr::AbstractArray{T, 2}, θ; method=:bilinear,  mid=size(arr) .÷ 2 .+ 1) where T = 
     view(imrotate_adj(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; method, mid), :, :, 1)
 
 function imrotate_adj(arr::AbstractArray{T, 3}, θ; method=:bilinear, mid=size(arr) .÷ 2 .+ 1) where T
     # needed for rotation matrix
-    sinθ, cosθ = get_sin_cos(T, θ)
+    sinθ, cosθ = sincos(T(θ))
     
     # out array
     out = similar(arr)
@@ -198,52 +194,31 @@ function imrotate_adj(arr::AbstractArray{T, 3}, θ; method=:bilinear, mid=size(a
 	return out
 end
 
-
-
-# KernelAbstractions specific
-@kernel function imrotate_kernel_adj!(out, arr, sinθ, cosθ, mid, imax, jmax)
-    i, j, k = @index(Global, NTuple)
-    y = i - mid[1]
-    x = j - mid[2]
-    yrot = cosθ * y - sinθ * x + mid[1] 
-    xrot = sinθ * y + cosθ * x + mid[2]
-    yrotf = floor(yrot)
-    xrotf = floor(xrot)
-    inew = floor(Int, yrot)
-    jnew = floor(Int, xrot)
-    if 0 ≤ inew ≤ imax && 0 ≤ jnew ≤ jmax
-        o = arr[i, j, k]
-        xdiff = (xrot - xrotf)
-        ydiff = (yrot - yrotf)
-        # in case we hit the boundary stripe, then we need to avoid out of bounds access
-        Δi = inew != imax
-        Δj = jnew != jmax
-        # we need to avoid that we access arr[0]
-        # in rare cases the rounding clips off values on the left and top border
-        # we still try to access them with this extra comparison
-        Δi_min = inew == 0
-        Δj_min = jnew == 0
-        Atomix.@atomic out[inew + Δi_min,   jnew + Δj_min, k]   += (1 - xdiff) * (1 - ydiff) * o
-        Atomix.@atomic out[inew + Δi,       jnew + Δj_min, k]   += (1 - xdiff) * ydiff       * o
-        Atomix.@atomic out[inew + Δi_min,   jnew + Δj, k]       += xdiff       * (1 - ydiff) * o
-        Atomix.@atomic out[inew + Δi,       jnew + Δj, k]       += xdiff       * ydiff       * o
-    end
-end
-
-
 @kernel function imrotate_kernel_nearest_adj!(out, arr, sinθ, cosθ, mid, imax, jmax)
     i, j, k = @index(Global, NTuple)
-    y = i - mid[1]
-    x = j - mid[2]
-    yrot = cosθ * y - sinθ * x + mid[1]
-    xrot = sinθ * y + cosθ * x + mid[2]
-    inew = round(Int, yrot)
-    jnew = round(Int, xrot)
 
-    if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax 
-        Atomix.@atomic out[inew, jnew, k] += arr[i, j, k]
+    @inline _, _, _, _, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, mid, round) 
+    if 1 ≤ yrot_int ≤ imax && 1 ≤ xrot_int ≤ jmax 
+        Atomix.@atomic out[yrot_int, xrot_int, k] += arr[i, j, k]
     end
 end
+
+
+@kernel function imrotate_kernel_adj!(out, arr, sinθ, cosθ, mid, imax, jmax)
+    i, j, k = @index(Global, NTuple)
+
+    @inline yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, mid, floor) 
+    if 0 ≤ yrot_int ≤ imax && 0 ≤ xrot_int ≤ jmax
+        o = arr[i, j, k]
+        @inline Δi, Δj, Δi_min, Δj_min, ydiff, ydiff_diff, xdiff, xdiff_diff = 
+            bilinear_helper(yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int, imax, jmax)
+        Atomix.@atomic out[yrot_int + Δi_min,   xrot_int + Δj_min,  k]  += (1 - xdiff)  * (1 - ydiff) * o
+        Atomix.@atomic out[yrot_int + Δi,       xrot_int + Δj_min,  k]  += (1 - xdiff)  * ydiff       * o
+        Atomix.@atomic out[yrot_int + Δi_min,   xrot_int + Δj,      k]  += xdiff        * (1 - ydiff) * o
+        Atomix.@atomic out[yrot_int + Δi,       xrot_int + Δj,      k]  += xdiff        * ydiff       * o
+    end
+end
+
 
 
 
