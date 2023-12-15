@@ -119,13 +119,13 @@ julia> Zygote.gradient(f, arr)
 """
 function imrotate(arr::AbstractArray{T, 3}, θ; method=:bilinear, midpoint=size(arr) .÷ 2 .+ 1,
                   adjoint=false) where T
-    @assert (T <: Integer && method==:nearest || T <: AbstractFloat) "If the array has an Int eltype, only method=:nearest is supported"
+    @assert (T <: Integer && method==:nearest || !(T <: Integer)) "If the array has an Int eltype, only method=:nearest is supported"
     @assert typeof(midpoint) <: Tuple "midpoint keyword has to be a tuple"
     # out array
     out = similar(arr)
     fill!(out, 0)
     # needed for rotation matrix
-    θ = mod(T(θ), T(2π))
+    θ = mod(real(T)(θ), real(T)(2π))
 
     if iszero(θ)
         out .= arr
@@ -145,8 +145,8 @@ function imrotate(arr::AbstractArray{T, 3}, θ; method=:bilinear, midpoint=size(
             return reverse!(PermutedDimsArray(out, (2,1,3)), dims=(1,))
         end
     end
-    midpoint = T.(midpoint)
-    sinθ, cosθ = sincos(T(θ)) 
+    midpoint = real(T).(midpoint)
+    sinθ, cosθ = sincos(real(T)(θ)) 
     # KernelAbstractions specific
     backend = get_backend(arr)
     if adjoint
