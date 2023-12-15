@@ -98,8 +98,8 @@ function imrotate(arr::AbstractArray{T, 3}, θ; method=:bilinear, mid=size(arr) 
     fill!(out, 0)
     # needed for rotation matrix
     
-    sinθ, cosθ = get_sin_cos(T, θ)
-    #sinθ, cosθ = sincos(T(θ)) 
+    #sinθ, cosθ = get_sin_cos(T, θ)
+    sinθ, cosθ = sincos(T(θ)) 
     # KernelAbstractions specific
     backend = get_backend(arr)
     if method == :bilinear
@@ -122,10 +122,10 @@ end
     i, j, k = @index(Global, NTuple)
     y = i - mid[1]
     x = j - mid[2]
-    yrot = cosθ * y - sinθ * x
-    xrot = sinθ * y + cosθ * x
-    inew = round(Int, yrot) + mid[1]
-    jnew = round(Int, xrot) + mid[2]
+    yrot = cosθ * y - sinθ * x + mid[1]
+    xrot = sinθ * y + cosθ * x + mid[2]
+    inew = round(Int, yrot)
+    jnew = round(Int, xrot)
 
     if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax 
         @inbounds out[i, j, k] = arr[inew, jnew, k]
@@ -138,12 +138,12 @@ end
     i, j, k = @index(Global, NTuple)
     y = i - mid[1]
     x = j - mid[2]
-    yrot = cosθ * y - sinθ * x
-    xrot = sinθ * y + cosθ * x
+    yrot = cosθ * y - sinθ * x + mid[1]
+    xrot = sinθ * y + cosθ * x + mid[2]
     yrotf = floor(yrot)
     xrotf = floor(xrot)
-    inew = floor(Int, yrot) + mid[1]
-    jnew = floor(Int, xrot) + mid[2]
+    inew = floor(Int, yrot)
+    jnew = floor(Int, xrot)
     
     if 0 ≤ inew ≤ imax && 0 ≤ jnew ≤ jmax 
         xdiff = (xrot - xrotf)
@@ -205,12 +205,12 @@ end
     i, j, k = @index(Global, NTuple)
     y = i - mid[1]
     x = j - mid[2]
-    yrot = cosθ * y - sinθ * x
-    xrot = sinθ * y + cosθ * x
+    yrot = cosθ * y - sinθ * x + mid[1] 
+    xrot = sinθ * y + cosθ * x + mid[2]
     yrotf = floor(yrot)
     xrotf = floor(xrot)
-    inew = floor(Int, yrot) + mid[1]
-    jnew = floor(Int, xrot) + mid[2]
+    inew = floor(Int, yrot)
+    jnew = floor(Int, xrot)
     if 0 ≤ inew ≤ imax && 0 ≤ jnew ≤ jmax
         o = arr[i, j, k]
         xdiff = (xrot - xrotf)
@@ -235,10 +235,10 @@ end
     i, j, k = @index(Global, NTuple)
     y = i - mid[1]
     x = j - mid[2]
-    yrot = cosθ * y - sinθ * x
-    xrot = sinθ * y + cosθ * x
-    inew = round(Int, yrot) + mid[1]
-    jnew = round(Int, xrot) + mid[2]
+    yrot = cosθ * y - sinθ * x + mid[1]
+    xrot = sinθ * y + cosθ * x + mid[2]
+    inew = round(Int, yrot)
+    jnew = round(Int, xrot)
 
     if 1 ≤ inew ≤ imax && 1 ≤ jnew ≤ jmax 
         Atomix.@atomic out[inew, jnew, k] += arr[i, j, k]
