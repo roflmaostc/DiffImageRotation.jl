@@ -26,14 +26,14 @@ function bilinear_helper(yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int, imax, j
         ydiff = (yrot - yrot_f)
         ydiff_diff = 1 - ydiff
         # in case we hit the boundary stripe, then we need to avoid out of bounds access
-        Δi = yrot_int != imax
-        Δj = xrot_int != jmax
+        Δi = 1#yrot_int != imax
+        Δj = 1#xrot_int != jmax
       
         # we need to avoid that we access arr[0]
         # in rare cases the rounding clips off values on the left and top border
         # we still try to access them with this extra comparison
-        Δi_min = yrot_int == 0
-        Δj_min = xrot_int == 0
+        Δi_min = 0#yrot_int == 0
+        Δj_min = 0#xrot_int == 0
         return Δi, Δj, Δi_min, Δj_min, ydiff, ydiff_diff, xdiff, xdiff_diff
 end
 
@@ -150,7 +150,7 @@ end
     i, j, k = @index(Global, NTuple)
     
     @inline yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, mid, floor) 
-    if 0 ≤ yrot_int ≤ imax && 0 ≤ xrot_int ≤ jmax 
+    if 1 ≤ yrot_int ≤ imax - 1&& 1 ≤ xrot_int ≤ jmax - 1 
 
         @inline Δi, Δj, Δi_min, Δj_min, ydiff, ydiff_diff, xdiff, xdiff_diff = 
             bilinear_helper(yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int, imax, jmax)
@@ -208,7 +208,7 @@ end
     i, j, k = @index(Global, NTuple)
 
     @inline yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, mid, floor) 
-    if 0 ≤ yrot_int ≤ imax && 0 ≤ xrot_int ≤ jmax
+    if 1 ≤ yrot_int ≤ imax - 1 && 1 ≤ xrot_int ≤ jmax - 1
         o = arr[i, j, k]
         @inline Δi, Δj, Δi_min, Δj_min, ydiff, ydiff_diff, xdiff, xdiff_diff = 
             bilinear_helper(yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int, imax, jmax)
