@@ -76,23 +76,24 @@ using Zygote, FiniteDifferences, ImageTransformations
     @testset "Test gradients" begin
 
         for method in [:nearest, :bilinear]
-            f(x) = sum(abs2.(DiffImageRotation.imrotate(x, deg2rad(137); method)))
+            for angle in deg2rad.([0, 45, 90, 137, 180, 270, 360])
+                f(x) = sum(abs2.(DiffImageRotation.imrotate(x, deg2rad(angle); method)))
        
-            @show method
-            img2 = randn((32, 32));
-            grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
-            grad2 = Zygote.gradient(f, img2)[1];
-            @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
-            
-            img2 = randn((21, 21));
-            grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
-            grad2 = Zygote.gradient(f, img2)[1];
-            @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
+                img2 = randn((20, 20));
+                grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
+                grad2 = Zygote.gradient(f, img2)[1];
+                @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
+                
+                img2 = randn((21, 21));
+                grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
+                grad2 = Zygote.gradient(f, img2)[1];
+                @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
 
-            img2 = randn((20, 14, 3));
-            grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
-            grad2 = Zygote.gradient(f, img2)[1];
-            @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
+                img2 = randn((10, 14, 3));
+                grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
+                grad2 = Zygote.gradient(f, img2)[1];
+                @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
+            end
         end
     end
 
