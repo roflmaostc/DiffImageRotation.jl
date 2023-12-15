@@ -23,7 +23,7 @@ begin
 end
 
 # ╔═╡ d50e7470-000a-47fe-8ce5-b03e0ec01287
-using KernelAbstractions, CUDA, TestImages, FileIO, ImageShow, ImageTransformations, PlutoUI, PlutoTest, NDTools, FourierTools
+using KernelAbstractions, CUDA, TestImages, FileIO, ImageShow, ImageTransformations, PlutoUI, PlutoTest, NDTools, FourierTools, Interpolations
 
 # ╔═╡ cd42e1cc-66e3-43a7-9cc9-2adb02a4e363
 using DiffImageRotation
@@ -40,9 +40,6 @@ imrotate = DiffImageRotation.imrotate
 # ╔═╡ 8eb351c6-5cf1-4e07-a0d0-8aae66f36301
 img = Float32.(testimage("cameraman"))[begin+1:end, begin+1:end];
 
-# ╔═╡ 1e7a3fa5-642e-40cf-8a07-0da9e1808d1d
-
-
 # ╔═╡ cc42f0d0-9438-4f27-a670-bd9e9101352d
 md"# Example
 Visually the results are almost identical.
@@ -56,19 +53,31 @@ Small difference are visible because *ImageTransformations* rotates around the `
 [simshow(img) simshow(imrotate(img, deg2rad(45)))];
 
 # ╔═╡ 70f74f6d-42c9-40ce-9652-ec1ea4e614e4
-@bind angle Slider(0:361, show_value=true)
+@bind angle Slider(0f0:361f0, show_value=true)
 
 # ╔═╡ 49c86f22-0961-47db-9534-6b01e7b412d2
 DiffImageRotation.imrotate(img, deg2rad(angle));
 
+# ╔═╡ a22cb61e-26e5-40f7-b2fa-9c186940cee4
+[simshow(DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0, method=:nearest)) simshow(ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0, method=Constant())) simshow(FourierTools.rotate(img, deg2rad.(angle)))]
+
+# ╔═╡ a57c7739-5ee6-4b7a-92db-e19506e67884
+simshow(DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0, method=:nearest) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0, method=Constant()))
+
 # ╔═╡ 4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
-[simshow(DiffImageRotation.imrotate(img, deg2rad(angle))) simshow(ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)) simshow(FourierTools.rotate(img, deg2rad.(angle)))]
+[simshow(DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0)) simshow(ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)) simshow(FourierTools.rotate(img, deg2rad.(angle)))]
+
+# ╔═╡ 50eefd6c-e99c-481e-af5c-b590a21b4687
+simshow(reverse!(copy(img'), dims=(2,)))
 
 # ╔═╡ 0114ae74-cbb3-4778-9cb8-6985b5760996
-simshow(DiffImageRotation.imrotate(img, deg2rad(angle)) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0))
+simshow(abs.(DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)), γ=1)
+
+# ╔═╡ 5b76003a-769c-4d7c-8e23-3f35bb31526f
+extrema((DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)))
 
 # ╔═╡ ea258ed5-b13b-4aae-8502-4dffdcf82c11
-r = all(select_region(.≈(1 .+ DiffImageRotation.imrotate(img, deg2rad(angle)), 1 .+ ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0), rtol=1f-5), new_size=(100, 100)))
+r = all(select_region(.≈(1 .+ DiffImageRotation.imrotate(img, deg2rad(angle)), 1 .+ ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0), rtol=1f-4), new_size=(510, 510)))
 
 # ╔═╡ 2e81e47d-b57d-4107-8cf8-654818f0c7ca
 PlutoTest.@test r
@@ -132,15 +141,18 @@ f(x) = sum(abs2.(imrotate(x, 35)))
 # ╠═cd42e1cc-66e3-43a7-9cc9-2adb02a4e363
 # ╠═ef18be31-0b8c-43c1-97f8-c59da7740934
 # ╠═8eb351c6-5cf1-4e07-a0d0-8aae66f36301
-# ╠═1e7a3fa5-642e-40cf-8a07-0da9e1808d1d
 # ╟─cc42f0d0-9438-4f27-a670-bd9e9101352d
 # ╟─35415865-4d13-4636-8957-5da0ba62a7ea
 # ╠═49c86f22-0961-47db-9534-6b01e7b412d2
+# ╠═a22cb61e-26e5-40f7-b2fa-9c186940cee4
+# ╠═a57c7739-5ee6-4b7a-92db-e19506e67884
 # ╠═4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
 # ╠═70f74f6d-42c9-40ce-9652-ec1ea4e614e4
+# ╠═50eefd6c-e99c-481e-af5c-b590a21b4687
 # ╠═0114ae74-cbb3-4778-9cb8-6985b5760996
+# ╠═5b76003a-769c-4d7c-8e23-3f35bb31526f
 # ╟─2e81e47d-b57d-4107-8cf8-654818f0c7ca
-# ╟─ea258ed5-b13b-4aae-8502-4dffdcf82c11
+# ╠═ea258ed5-b13b-4aae-8502-4dffdcf82c11
 # ╟─9bc17466-8a9b-4ffd-8898-8ed00d2e385e
 # ╠═1a5155ac-cc8d-41fd-bbc2-8d77c1d174b7
 # ╠═26ed1552-ba9f-4203-af54-ad8b60e3572d
