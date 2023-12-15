@@ -49,32 +49,20 @@ Small difference are visible because *ImageTransformations* rotates around the `
 *FourierTools.jl* uses a FFT based method.
 "
 
-# ╔═╡ 35415865-4d13-4636-8957-5da0ba62a7ea
-[simshow(img) simshow(imrotate(img, deg2rad(45)))];
-
 # ╔═╡ 70f74f6d-42c9-40ce-9652-ec1ea4e614e4
 @bind angle Slider(0f0:361f0, show_value=true)
 
-# ╔═╡ 49c86f22-0961-47db-9534-6b01e7b412d2
-DiffImageRotation.imrotate(img, deg2rad(angle));
-
-# ╔═╡ a22cb61e-26e5-40f7-b2fa-9c186940cee4
-[simshow(DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0, method=:nearest)) simshow(ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0, method=Constant())) simshow(FourierTools.rotate(img, deg2rad.(angle)))]
-
-# ╔═╡ a57c7739-5ee6-4b7a-92db-e19506e67884
-simshow(DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0, method=:nearest) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0, method=Constant()))
-
 # ╔═╡ 4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
-[simshow(DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0)) simshow(ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)) simshow(FourierTools.rotate(img, deg2rad.(angle)))]
+[simshow(DiffImageRotation.imrotate(img, deg2rad(angle))) simshow(ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)) simshow(FourierTools.rotate(img, deg2rad.(angle)))]
 
-# ╔═╡ 50eefd6c-e99c-481e-af5c-b590a21b4687
-simshow(reverse!(copy(img'), dims=(2,)))
+# ╔═╡ 6a1b1a32-a900-4057-98ec-7308c6b12d94
+md"## Change Rotation `midpoint`"
 
-# ╔═╡ 0114ae74-cbb3-4778-9cb8-6985b5760996
-simshow(abs.(DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)), γ=1)
+# ╔═╡ b4e56bf1-3f49-4ae3-b1a4-88c69f6af678
+simshow(DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=(100, 100)))
 
-# ╔═╡ 5b76003a-769c-4d7c-8e23-3f35bb31526f
-extrema((DiffImageRotation.imrotate(img, deg2rad(angle), midpoint=size(img) ./ 2 .+ 0.5f0) .- ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0)))
+# ╔═╡ 35415865-4d13-4636-8957-5da0ba62a7ea
+[simshow(img) simshow(imrotate(img, deg2rad(45)))];
 
 # ╔═╡ ea258ed5-b13b-4aae-8502-4dffdcf82c11
 r = all(select_region(.≈(1 .+ DiffImageRotation.imrotate(img, deg2rad(angle)), 1 .+ ImageTransformations.imrotate(img, deg2rad(angle), axes(img), fillvalue=0), rtol=1f-4), new_size=(510, 510)))
@@ -142,15 +130,11 @@ f(x) = sum(abs2.(imrotate(x, 35)))
 # ╠═ef18be31-0b8c-43c1-97f8-c59da7740934
 # ╠═8eb351c6-5cf1-4e07-a0d0-8aae66f36301
 # ╟─cc42f0d0-9438-4f27-a670-bd9e9101352d
-# ╟─35415865-4d13-4636-8957-5da0ba62a7ea
-# ╠═49c86f22-0961-47db-9534-6b01e7b412d2
-# ╠═a22cb61e-26e5-40f7-b2fa-9c186940cee4
-# ╠═a57c7739-5ee6-4b7a-92db-e19506e67884
-# ╠═4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
 # ╠═70f74f6d-42c9-40ce-9652-ec1ea4e614e4
-# ╠═50eefd6c-e99c-481e-af5c-b590a21b4687
-# ╠═0114ae74-cbb3-4778-9cb8-6985b5760996
-# ╠═5b76003a-769c-4d7c-8e23-3f35bb31526f
+# ╠═4253ef7a-24e5-4caa-8767-9b9fe29b8e2e
+# ╟─6a1b1a32-a900-4057-98ec-7308c6b12d94
+# ╠═b4e56bf1-3f49-4ae3-b1a4-88c69f6af678
+# ╟─35415865-4d13-4636-8957-5da0ba62a7ea
 # ╟─2e81e47d-b57d-4107-8cf8-654818f0c7ca
 # ╠═ea258ed5-b13b-4aae-8502-4dffdcf82c11
 # ╟─9bc17466-8a9b-4ffd-8898-8ed00d2e385e
