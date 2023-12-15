@@ -1,7 +1,7 @@
 name = "DiffImageRotation"
 uuid = "cb1f95eb-7c3a-45bc-9e18-5c07f1beaacd"
 authors = ["Felix Wechsler (roflmaostc) <fxw+git@mailbox.org>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Atomix = "a9b6321e-bd34-4604-b9c9-b65b8de01458"
