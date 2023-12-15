@@ -133,7 +133,7 @@ function imrotate(arr::AbstractArray{T, 3}, θ; method=:bilinear, midpoint=size(
     end
 
     # check for special cases where rotations are trivial
-    if false && midpoint[1] ≈ size(arr, 1) ÷ 2 + 0.5 && midpoint[2] ≈ size(arr, 2) ÷ 2 + 0.5
+    if midpoint[1] ≈ size(arr, 1) ÷ 2 + 0.5 && midpoint[2] ≈ size(arr, 2) ÷ 2 + 0.5
         if θ ≈ π / 2 
             out .= arr
             return reverse!(PermutedDimsArray(out, (2,1,3)), dims=(2,))
