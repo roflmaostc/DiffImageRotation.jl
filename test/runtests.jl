@@ -33,6 +33,30 @@ using Zygote, FiniteDifferences, ImageTransformations
                 @test all(1 .+ res1[20:35, 20:35] .≈ 1 .+ res3[20:35, 20:35, 2])
             end
         end
+
+
+        arr = zeros((52, 52))
+        arr[15:40, 15:40] .= 1 .+ randn((26, 26))
+        
+        arr2 = zeros((52, 52, 5))
+        arr2[15:40, 15:40, :] .= arr[15:40, 15:40] 
+
+
+        for method in [:nearest, :bilinear]
+            for angle in deg2rad.([0, 35,  90, 170, 180, 270, 360])
+                res1 = DiffImageRotation.imrotate(arr, angle; method, midpoint=size(arr) .÷2 .+0.5)
+                res3 = DiffImageRotation.imrotate(arr2, angle; method, midpoint=size(arr) .÷2 .+0.5)
+                if method == :nearest
+                    res2 = ImageTransformations.imrotate(arr, angle, axes(arr), method=Constant(), fillvalue=0)
+                elseif method == :bilinear
+                    res2 = ImageTransformations.imrotate(arr, angle, axes(arr), fillvalue=0)
+                end
+                @test all(1 .+ res1[20:35, 20:35] .≈ 1 .+ res2[20:35, 20:35])
+                @test all(1 .+ res1[20:35, 20:35] .≈ 1 .+ res3[20:35, 20:35, 1])
+                @test all(1 .+ res1[20:35, 20:35] .≈ 1 .+ res3[20:35, 20:35, 2])
+            end
+        end
+
     end
 
     @testset "Compare for plausibilty" begin
