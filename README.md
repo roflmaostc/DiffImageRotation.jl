@@ -20,10 +20,13 @@ julia> using DiffImageRotation
 
 julia> arr = zeros((32, 32)); arr[15:19, 10:23] .= 1 
 
-julia> imrotate(arr, rad2deg(45));
+julia> imrotate(arr, deg2rad(45));
 
-julia> imrotate(arr, rad2deg(90));
+julia> imrotate(arr, deg2rad(90));
 
+julia> imrotate(arr, deg2rad(45), midpoint=(10,10))
+
+julia> imrotate(arr, deg2rad(45), method=:nearest)
 # access the docs
 julia> ?imrotate  
 ```
@@ -31,6 +34,13 @@ julia> ?imrotate
 ![](examples/example.png)
 
 To learn more about the interpolation scheme, see this [webpage](http://www.leptonica.org/rotation.html). We implement rotation by area mapping (RAM).
+
+## Features
+* bilinear interpolation based rotation
+* nearest neighbor
+* Automatic Differentation (AD) compatible
+* KernelAbstractions.jl supported backends (CUDA, CPU, ...)
+* midpoint around which rotation happens, can be specified
 
 ## Related Packages
 There is `imrotate` by [ImageTransformations.jl](https://github.com/JuliaImages/ImageTransformations.jl).

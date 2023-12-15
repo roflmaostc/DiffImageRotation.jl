@@ -161,7 +161,7 @@ arr3 = zeros((32, 32)); arr3[16:18, 17-16:17+15] .= 1
 DiffImageRotation.imrotate(arr3, rad2deg(45))
 
 # ╔═╡ da9b976e-938f-45a2-83f0-bb37a51bc8a9
-[simshow(arr3) simshow(ones(32,1)) simshow(DiffImageRotation.imrotate(arr3, rad2deg(45))) simshow(ones(32,1)) simshow(DiffImageRotation.imrotate(arr3, deg2rad(90)))]
+[simshow(arr3) simshow(ones(32,1)) simshow(DiffImageRotation.imrotate(arr3, deg2rad(45))) simshow(ones(32,1)) simshow(DiffImageRotation.imrotate(arr3, deg2rad(90))) simshow(ones(32,1)) simshow(DiffImageRotation.imrotate(arr3, deg2rad(45), midpoint=(10,10))) simshow(ones(32,1)) simshow(DiffImageRotation.imrotate(arr3, deg2rad(45), method=:nearest))]
 
 # ╔═╡ ce6077ae-5d6a-4a0f-af85-791e6d46e027
 @bind angle4 Slider(0:360, show_value=true)
