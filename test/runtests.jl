@@ -22,6 +22,7 @@ using Zygote, FiniteDifferences, ImageTransformations
         for method in [:nearest, :bilinear]
             for angle in deg2rad.([0, 35, 45, 90, 135, 170, 180, 270, 360])
                 res1 = DiffImageRotation.imrotate(arr, angle; method)
+                res4 = DiffImageRotation.imrotate!(zero.(arr), copy(arr), angle; method)
                 res3 = DiffImageRotation.imrotate(arr2, angle; method)
                 if method == :nearest
                     res2 = ImageTransformations.imrotate(arr, angle, axes(arr), method=Constant(), fillvalue=0)
@@ -29,6 +30,7 @@ using Zygote, FiniteDifferences, ImageTransformations
                     res2 = ImageTransformations.imrotate(arr, angle, axes(arr), fillvalue=0)
                 end
                 @test all(1 .+ res1[20:35, 20:35] .≈ 1 .+ res2[20:35, 20:35])
+                @test all(1 .+ res1[20:35, 20:35] .≈ 1 .+ res4[20:35, 20:35])
                 @test all(1 .+ res1[20:35, 20:35] .≈ 1 .+ res3[20:35, 20:35, 1])
                 @test all(1 .+ res1[20:35, 20:35] .≈ 1 .+ res3[20:35, 20:35, 2])
             end

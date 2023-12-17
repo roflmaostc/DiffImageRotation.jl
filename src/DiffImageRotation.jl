@@ -38,7 +38,7 @@ end
 
 
 imrotate(arr::AbstractArray{T, 2}, θ; midpoint=size(arr) .÷ 2 .+ 1, method=:bilinear, adjoint=false, fillvalue=zero(T)) where T = 
-    view(imrotate(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; midpoint, method, adjoint, fillvalue), :, :, 1)
+    reshape(imrotate(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; midpoint, method, adjoint, fillvalue), (size(arr, 1), size(arr, 2)))
 
 """
     imrotate(arr::AbstractArray, θ; method=:bilinear, midpoint=size(arr) .÷ 2 .+ 1)
@@ -128,13 +128,22 @@ function imrotate(arr::AbstractArray{T, 3}, θ; method=:bilinear, midpoint=size(
     return out
 end
 
+
+function imrotate!(out::AbstractArray{T, 2}, arr::AbstractArray{T, 2}, θ; method=:bilinear, midpoint=size(arr) .÷ 2 .+ 1,
+                  adjoint=false) where T
+    imrotate!(reshape(out, (size(out, 1), size(out, 2), 1)), 
+              reshape(arr, (size(arr, 1), size(arr, 2), 1)), 
+              θ; method, midpoint, adjoint)
+    return out 
+end
 """
     imrotate!(out, arr::AbstractArray, θ; method=:bilinear, midpoint=size(arr) .÷ 2 .+ 1)
 
-In-place version of [`imrotate`)(@ref).
-But note, the values in `out` are not overwritten but added to each other!
+In-place version of [`imrotate`](@ref).
 
-So `out .+ arr == imrotate!(out, arr, θ)`
+!!! warning 
+    The values in `out` are not overwritten but added to the values of the rotation operation!
+    So `out .+ arr == imrotate!(out, arr, θ)`
 """
 function imrotate!(out::AbstractArray{T, 3}, arr::AbstractArray{T, 3}, θ; method=:bilinear, midpoint=size(arr) .÷ 2 .+ 1,
                   adjoint=false) where T
