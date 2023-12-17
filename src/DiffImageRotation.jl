@@ -2,7 +2,7 @@ module DiffImageRotation
 
 using KernelAbstractions, ChainRulesCore, Atomix
 
-export imrotate
+export imrotate, imrotate!
 
 # this rotates the coordinates and either applies round(nearest neighbour)
 # or floor (:bilinear interpolation)
@@ -37,8 +37,8 @@ function bilinear_helper(yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int, imax, j
 end
 
 
-imrotate(arr::AbstractArray{T, 2}, θ; midpoint=size(arr) .÷ 2 .+ 1, method=:bilinear, adjoint=false) where T = 
-    view(imrotate(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; midpoint, method, adjoint), :, :, 1)
+imrotate(arr::AbstractArray{T, 2}, θ; midpoint=size(arr) .÷ 2 .+ 1, method=:bilinear, adjoint=false, fillvalue=zero(T)) where T = 
+    view(imrotate(reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; midpoint, method, adjoint, fillvalue), :, :, 1)
 
 """
     imrotate(arr::AbstractArray, θ; method=:bilinear, midpoint=size(arr) .÷ 2 .+ 1)
@@ -118,31 +118,45 @@ julia> Zygote.gradient(f, arr)
 ```
 """
 function imrotate(arr::AbstractArray{T, 3}, θ; method=:bilinear, midpoint=size(arr) .÷ 2 .+ 1,
-                  adjoint=false) where T
+                  adjoint=false, fillvalue=zero(T)) where T
     @assert (T <: Integer && method==:nearest || !(T <: Integer)) "If the array has an Int eltype, only method=:nearest is supported"
     @assert typeof(midpoint) <: Tuple "midpoint keyword has to be a tuple"
     # out array
     out = similar(arr)
-    fill!(out, 0)
+    fill!(out, fillvalue)
+    imrotate!(out, arr, θ; method, midpoint, adjoint)
+    return out
+end
+
+"""
+    imrotate!(out, arr::AbstractArray, θ; method=:bilinear, midpoint=size(arr) .÷ 2 .+ 1)
+
+In-place version of [`imrotate`)(@ref).
+But note, the values in `out` are not overwritten but added to each other!
+
+So `out .+ arr == imrotate!(out, arr, θ)`
+"""
+function imrotate!(out::AbstractArray{T, 3}, arr::AbstractArray{T, 3}, θ; method=:bilinear, midpoint=size(arr) .÷ 2 .+ 1,
+                  adjoint=false) where T
     # needed for rotation matrix
     θ = mod(real(T)(θ), real(T)(2π))
 
     if iszero(θ)
-        out .= arr
-        return out
+        out .+= arr
+        return
     end
 
     # check for special cases where rotations are trivial
     if midpoint[1] ≈ size(arr, 1) ÷ 2 + 0.5 && midpoint[2] ≈ size(arr, 2) ÷ 2 + 0.5
         if θ ≈ π / 2 
-            out .= arr
-            return reverse!(PermutedDimsArray(out, (2,1,3)), dims=(2,))
+            out .+= reverse(PermutedDimsArray(arr, (2,1,3)), dims=(2,))
+            return
         elseif θ ≈ π
-            out .= arr
-            return reverse!(out, dims=(1,2))
+            out .+= reverse(arr, dims=(1,2))
+            return
         elseif θ ≈ 3 / 2 * π
-            out .= arr
-            return reverse!(PermutedDimsArray(out, (2,1,3)), dims=(1,))
+            out .+= reverse(PermutedDimsArray(arr, (2,1,3)), dims=(1,))
+            return
         end
     end
     midpoint = real(T).(midpoint)
@@ -186,7 +200,7 @@ end
 
     @inline _, _, _, _, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, midpoint, round) 
     if 1 ≤ yrot_int ≤ imax && 1 ≤ xrot_int ≤ jmax
-        @inbounds out[i, j, k] = arr[yrot_int, xrot_int, k]
+        @inbounds out[i, j, k] += arr[yrot_int, xrot_int, k]
     end
 end
 
@@ -199,7 +213,7 @@ end
 
         @inline Δi, Δj, Δi_min, Δj_min, ydiff, ydiff_diff, xdiff, xdiff_diff = 
             bilinear_helper(yrot, xrot, yrot_f, xrot_f, yrot_int, xrot_int, imax, jmax)
-        @inbounds out[i, j, k] = 
+        @inbounds out[i, j, k] += 
             (   xdiff_diff  * ydiff_diff    * arr[yrot_int + Δi_min, xrot_int + Δj_min, k]
              +  xdiff_diff  * ydiff         * arr[yrot_int + Δi,     xrot_int + Δj_min, k]
              +  xdiff       * ydiff_diff    * arr[yrot_int + Δi_min, xrot_int + Δj,     k] 
@@ -238,11 +252,12 @@ end
 
 # is this rrule good? 
 # no @thunk and @unthunk
-function ChainRulesCore.rrule(::typeof(imrotate), array, θ; method=:bilinear, midpoint=size(array) .÷ 2 .+ 1)
-    res = imrotate(array, θ; method, midpoint)
+function ChainRulesCore.rrule(::typeof(imrotate), array::AbstractArray{T}, θ; method=:bilinear, midpoint=size(array) .÷ 2 .+ 1,
+                              fillvalue=zero(T)) where T
+    res = imrotate(array, θ; method, midpoint, fillvalue)
     function pb_rotate(ȳ)
         f̄ = NoTangent()
-        ad = imrotate(ȳ, θ; method, midpoint, adjoint=true)
+        ad = imrotate(ȳ, θ; method, midpoint, adjoint=true, fillvalue)
         return NoTangent(), ad, NoTangent()
     end    
 	return res, pb_rotate
