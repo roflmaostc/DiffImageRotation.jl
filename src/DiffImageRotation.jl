@@ -152,7 +152,7 @@ function imrotate!(out::AbstractArray{T, 3}, arr::AbstractArray{T, 3}, θ; metho
 
     if iszero(θ)
         out .+= arr
-        return
+        return out
     end
 
     # check for special cases where rotations are trivial
