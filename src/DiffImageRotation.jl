@@ -255,7 +255,6 @@ function ChainRulesCore.rrule(::typeof(imrotate), array::AbstractArray{T}, θ; m
                               fillvalue=zero(T)) where T
     res = imrotate(array, θ; method, midpoint, fillvalue)
     function pb_rotate(ȳ)
-        f̄ = NoTangent()
         ad = imrotate(ȳ, θ; method, midpoint, adjoint=true, fillvalue)
         return NoTangent(), ad, NoTangent()
     end    
