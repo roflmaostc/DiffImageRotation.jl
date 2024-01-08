@@ -191,6 +191,7 @@ function imrotate!(out::AbstractArray{T, 3}, arr::AbstractArray{T, 3}, θ; metho
     end
     kernel!(out, arr, sinθ, cosθ, midpoint, size(arr, 1), size(arr, 2),
             ndrange=(size(arr, 1), size(arr, 2), size(arr, 3)))
+    KernelAbstractions.synchronize(backend)
 	return out
 end
 
