@@ -7,59 +7,113 @@ using FFTW
 imrotate = DiffImageRotation.imrotate
 
 
+function f(arr)
+    img = arr
+    img_c = CuArray(arr)
 
-println("(2048, 2048)")
-img = randn(Float32, (2048, 2048))
-img_c = CuArray(img) 
-println("imrotate")
-@btime $imrotate($img, deg2rad(30))
-@btime $imrotate($img, deg2rad(30), method=:nearest)
-@btime DiffImageRotation.imrotate($img, deg2rad(30), adjoint=true)
-@btime CUDA.@sync $imrotate($img_c, deg2rad(30))
-@btime CUDA.@sync $imrotate($img_c, deg2rad(30), method=:nearest)
-@btime CUDA.@sync DiffImageRotation.imrotate($img_c, deg2rad(30), adjoint=true)
-#println("ImageTransformations")
-#@btime ImageTransformations.imrotate($img, deg2rad(30))
-#println("FourierTools")
-#@btime FourierTools.rotate($img, deg2rad(30))
-#p = plan_fft(img_c)
-#println("CUDA FFT")
-#@btime CUDA.@sync $p * $img_c
+    println("size:", size(img))
+    println("CPU")
+    @btime $imrotate($img, deg2rad(30))
+    println("nearest")
+    @btime $imrotate($img, deg2rad(30), method=:nearest)
+    println("adjoint")
+    @btime DiffImageRotation.∇imrotate($img, $img, deg2rad(30))
+    println("adjoint nearest")
+    @btime DiffImageRotation.∇imrotate($img, $img, deg2rad(30), method=:nearest)
+    println("\n")
+    println("CUDA")
+    @btime CUDA.@sync $imrotate($img_c, deg2rad(30))
+    println("nearest")
+    @btime CUDA.@sync $imrotate($img_c, deg2rad(30), method=:nearest)
+    println("adjoint")
+    @btime CUDA.@sync DiffImageRotation.∇imrotate($img_c, $img_c, deg2rad(30))
+    println("adjoint nearest")
+    @btime CUDA.@sync DiffImageRotation.∇imrotate($img_c, $img_c, deg2rad(30), method=:nearest)
+    println("\n\n")
+end
 
-println("(256, 256)")
-img = randn(Float32, (256, 256))
-img_c = CuArray(img) 
-println("imrotate")
-@btime $imrotate($img, deg2rad(30))
-@btime $imrotate($img, deg2rad(30))
-@btime DiffImageRotation.imrotate($img, deg2rad(30), adjoint=true)
-@btime CUDA.@sync $imrotate($img_c, deg2rad(30))
-@btime CUDA.@sync $imrotate($img_c, deg2rad(30), method=:nearest)
-@btime CUDA.@sync DiffImageRotation.imrotate($img_c, deg2rad(30), adjoint=true)
-#println("ImageTransformations")
-#@btime ImageTransformations.imrotate($img, deg2rad(30))
-#println("FourierTools")
-#@btime FourierTools.rotate($img, deg2rad(30))
-#p = plan_fft(img_c)
-#println("CUDA FFT")
-#@btime CUDA.@sync $p * $img_c
 
-println("(512, 512, 100)")
-img = randn(Float32, (256, 256, 100))
-img_c = CuArray(img) 
-println("imrotate")
-@btime $imrotate($img, deg2rad(30))
-@btime $imrotate($img, deg2rad(30), method=:nearest)
-@btime DiffImageRotation.imrotate($img, deg2rad(30), adjoint=true)
-@btime CUDA.@sync $imrotate($img_c, deg2rad(30))
-@btime CUDA.@sync $imrotate($img_c, deg2rad(30), method=:nearest)
-@btime CUDA.@sync DiffImageRotation.imrotate($img_c, deg2rad(30), adjoint=true)
-#println("FourierTools")
-#@btime FourierTools.rotate($img, deg2rad(30))
-#p = plan_fft(img_c)
-#println("CUDA FFT")
-#@btime CUDA.@sync $p * $img_c
+f(randn(Float32, (2048, 2048)))
+f(randn(Float32, (256, 256)))
+f(randn(Float32, (512, 512, 100)))
 
+
+
+
+
+
+"""
+    Tested on an AMD Ryzen 5 5600X 6-Core Processo with 12 Threads and a NVIDIA GeForce RTX 3060 with Julia 1.10 on Ubuntu 22.10
+
+```
+julia> include("examples/benchmark_REPL.jl")
+size:(2048, 2048)
+CPU
+  3.837 ms (135 allocations: 16.01 MiB)
+nearest
+  3.072 ms (135 allocations: 16.01 MiB)
+adjoint
+  7.463 ms (137 allocations: 16.01 MiB)
+adjoint nearest
+  4.423 ms (137 allocations: 16.01 MiB)
+
+
+CUDA
+  316.692 μs (103 allocations: 4.28 KiB)
+nearest
+  305.352 μs (103 allocations: 4.28 KiB)
+adjoint
+  735.298 μs (106 allocations: 4.39 KiB)
+adjoint nearest
+  327.322 μs (105 allocations: 4.38 KiB)
+
+
+
+size:(256, 256)
+CPU
+  82.163 μs (133 allocations: 266.81 KiB)
+nearest
+  72.573 μs (133 allocations: 266.81 KiB)
+adjoint
+  131.955 μs (135 allocations: 266.91 KiB)
+adjoint nearest
+  94.314 μs (135 allocations: 266.91 KiB)
+
+
+CUDA
+  18.081 μs (85 allocations: 4.00 KiB)
+nearest
+  17.801 μs (85 allocations: 4.00 KiB)
+adjoint
+  26.091 μs (87 allocations: 4.09 KiB)
+adjoint nearest
+  18.141 μs (87 allocations: 4.09 KiB)
+
+
+
+size:(512, 512, 100)
+CPU
+  38.045 ms (132 allocations: 100.01 MiB)
+nearest
+  33.698 ms (132 allocations: 100.01 MiB)
+adjoint
+  54.156 ms (132 allocations: 100.01 MiB)
+adjoint nearest
+  41.783 ms (132 allocations: 100.01 MiB)
+
+
+CUDA
+  1.804 ms (100 allocations: 4.31 KiB)
+nearest
+  1.722 ms (100 allocations: 4.31 KiB)
+adjoint
+  4.519 ms (100 allocations: 4.31 KiB)
+adjoint nearest
+  1.860 ms (100 allocations: 4.31 KiB)
+```
+
+
+"""
 
 """
 Tested on a AMD Ryzen 9 5900X 12-Core Processor with 24 Threads and a NVIDIA GeForce RTX 3060 with Julia 1.9.4 on Ubuntu 22.04.
