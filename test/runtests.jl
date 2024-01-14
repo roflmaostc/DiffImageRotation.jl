@@ -3,7 +3,7 @@ using Test
 
 using Interpolations
 using Zygote, FiniteDifferences, ImageTransformations
-
+using ChainRulesTestUtils
 
     @testset "SImple test" begin
         arr = zeros((6, 6)); arr[3:4, 4] .= 1;
@@ -76,24 +76,47 @@ using Zygote, FiniteDifferences, ImageTransformations
 
 
     @testset "Test gradients" begin
+                
+        img2 = randn((14, 14));
+        test_rrule(DiffImageRotation.imrotate, img2, π ⊢ ChainRulesTestUtils.NoTangent())
+        test_rrule(DiffImageRotation.imrotate, img2, π/2 ⊢ ChainRulesTestUtils.NoTangent())
+        test_rrule(DiffImageRotation.imrotate, img2, π/2*3 ⊢ ChainRulesTestUtils.NoTangent())
+        test_rrule(DiffImageRotation.imrotate, img2, 2π ⊢ ChainRulesTestUtils.NoTangent())
+
+
+        img2 = randn((15, 14));
+        test_rrule(DiffImageRotation.imrotate, img2, π ⊢ ChainRulesTestUtils.NoTangent())
+        test_rrule(DiffImageRotation.imrotate, img2, π/2 ⊢ ChainRulesTestUtils.NoTangent())
+        test_rrule(DiffImageRotation.imrotate, img2, π/2*3 ⊢ ChainRulesTestUtils.NoTangent())
+        test_rrule(DiffImageRotation.imrotate, img2, 2π ⊢ ChainRulesTestUtils.NoTangent())
+        
+        img2 = randn((11, 11));
+        test_rrule(DiffImageRotation.imrotate, img2, π ⊢ ChainRulesTestUtils.NoTangent())
+        test_rrule(DiffImageRotation.imrotate, img2, π/2 ⊢ ChainRulesTestUtils.NoTangent())
+        test_rrule(DiffImageRotation.imrotate, img2, π/2*3 ⊢ ChainRulesTestUtils.NoTangent())
+        test_rrule(DiffImageRotation.imrotate, img2, 2π ⊢ ChainRulesTestUtils.NoTangent())
 
         for method in [:nearest, :bilinear]
             for angle in deg2rad.([0, 45, 90, 137, 180, 270, 360])
-                f(x) = sum(abs2.(DiffImageRotation.imrotate(x, deg2rad(angle); method)))
+                f(x) = sum(abs2.(DiffImageRotation.imrotate(x, angle; method)))
        
-                img2 = randn((20, 20));
+                img2 = randn((12, 12));
                 grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
                 grad2 = Zygote.gradient(f, img2)[1];
+                test_rrule(DiffImageRotation.imrotate, img2, angle  ⊢ ChainRulesTestUtils.NoTangent())
+
                 @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
                 
-                img2 = randn((21, 21));
+                img2 = randn((11, 11));
                 grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
                 grad2 = Zygote.gradient(f, img2)[1];
+                test_rrule(DiffImageRotation.imrotate, img2, angle  ⊢ ChainRulesTestUtils.NoTangent())
                 @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
 
-                img2 = randn((10, 14, 3));
+                img2 = randn((10, 12, 3));
                 grad = FiniteDifferences.grad(central_fdm(7, 1), f, img2)[1]
                 grad2 = Zygote.gradient(f, img2)[1];
+                test_rrule(DiffImageRotation.imrotate, img2, angle  ⊢ ChainRulesTestUtils.NoTangent())
                 @test all(.≈(1 .+ grad, 1 .+ grad2, rtol=1f-7))
             end
         end

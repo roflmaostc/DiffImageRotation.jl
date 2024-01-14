@@ -144,7 +144,8 @@ end
 
 
 ∇imrotate(dy, arr::AbstractArray{T, 2}, θ; midpoint=size(arr) .÷ 2 .+ 1, method=:bilinear, fillvalue=zero(T)) where T =
-    reshape(∇imrotate(dy, reshape(arr, (size(arr,1), size(arr, 2), 1)), θ; midpoint, method, fillvalue), (size(arr, 1), size(arr, 2)))
+    reshape(∇imrotate(reshape(dy, (size(arr,1), size(arr, 2), 1)), reshape(arr, (size(arr,1), size(arr, 2), 1)), θ;
+                      midpoint, method, fillvalue), (size(arr, 1), size(arr, 2)))
 
 """
     ∇imrotate(dy, arr::AbstractArray{T, 3}, θ; method=:bilinear,
