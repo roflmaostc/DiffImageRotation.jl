@@ -63,7 +63,7 @@ function _check_trivial_rotations!(out, arr, θ, midpoint; adjoint=false)
         return true 
     end
     # check for special cases where rotations are trivial
-    if (iseven(size(arr, 1)) && iseven(size(arr, 2)) && 
+    if size(arr, 1) == size(arr, 2) && (iseven(size(arr, 1)) && iseven(size(arr, 2)) && 
         midpoint[1] ≈ size(arr, 1) ÷ 2 + 0.5 && midpoint[2] ≈ size(arr, 2) ÷ 2 + 0.5) ||
         (isodd(size(arr, 1)) && isodd(size(arr, 2)) && 
         (midpoint[1] == size(arr, 1) ÷ 2 + 1 && midpoint[1] == size(arr, 2) ÷ 2 + 1))
