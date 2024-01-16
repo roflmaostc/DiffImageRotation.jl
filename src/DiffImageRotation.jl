@@ -189,7 +189,8 @@ end
 @kernel function imrotate_kernel_nearest!(out, arr, sinθ, cosθ, midpoint, imax, jmax)
     i, j, c = @index(Global, NTuple)
 
-    _, _, _, _, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, midpoint, round) 
+    r(x...) = round(x..., RoundNearestTiesAway)
+    _, _, _, _, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, midpoint, r) 
     if 1 ≤ yrot_int ≤ imax && 1 ≤ xrot_int ≤ jmax
         @inbounds out[i, j, c] = arr[yrot_int, xrot_int, c]
     end
@@ -216,7 +217,8 @@ end
 @kernel function ∇imrotate_kernel_nearest!(out, arr, sinθ, cosθ, midpoint, imax, jmax)
     i, j, c = @index(Global, NTuple)
 
-    _, _, _, _, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, midpoint, round) 
+    r(x...) = round(x..., RoundNearestTiesAway)
+    _, _, _, _, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, midpoint, r) 
     if 1 ≤ yrot_int ≤ imax && 1 ≤ xrot_int ≤ jmax 
         Atomix.@atomic out[yrot_int, xrot_int, c] += arr[i, j, c]
     end
