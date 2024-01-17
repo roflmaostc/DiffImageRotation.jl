@@ -166,6 +166,13 @@ function ∇imrotate(dy, arr::AbstractArray{T, 3}, θ; method=:bilinear,
     out = similar(arr)
     fill!(out, fillvalue)
     
+    return ∇imrotate!(out, dy, arr, θ; method, midpoint)
+end
+
+
+function ∇imrotate!(out, dy, arr::AbstractArray{T, 3}, θ; method=:bilinear, 
+                   midpoint=size(arr) .÷ 2 .+ 1) where T
+    
     sinθ, cosθ, midpoint = _prepare_imrotate(arr, θ, midpoint) 
     # for the adjoint, the trivial rotations go in the other direction!
     # pass dy and not arr
@@ -186,10 +193,11 @@ function ∇imrotate(dy, arr::AbstractArray{T, 3}, θ; method=:bilinear,
 end
 
 
+
 @kernel function imrotate_kernel_nearest!(out, arr, sinθ, cosθ, midpoint, imax, jmax)
     i, j, c = @index(Global, NTuple)
 
-    r(x...) = round(x..., RoundNearestTiesAway)
+    r(x...) = round(x..., RoundNearestTiesUp)
     _, _, _, _, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, midpoint, r) 
     if 1 ≤ yrot_int ≤ imax && 1 ≤ xrot_int ≤ jmax
         @inbounds out[i, j, c] = arr[yrot_int, xrot_int, c]
@@ -217,7 +225,7 @@ end
 @kernel function ∇imrotate_kernel_nearest!(out, arr, sinθ, cosθ, midpoint, imax, jmax)
     i, j, c = @index(Global, NTuple)
 
-    r(x...) = round(x..., RoundNearestTiesAway)
+    r(x...) = round(x..., RoundNearestTiesUp)
     _, _, _, _, yrot_int, xrot_int = rotate_coordinates(sinθ, cosθ, i, j, midpoint, r) 
     if 1 ≤ yrot_int ≤ imax && 1 ≤ xrot_int ≤ jmax 
         Atomix.@atomic out[yrot_int, xrot_int, c] += arr[i, j, c]
