@@ -9,6 +9,8 @@ To provide a bilinear interpolation or nearest neighbour based image rotation wh
 It can rotate images but also 3D arrays with a trailing batch dimension.
 
 Further, it has registered adjoints with [ChainRulesCore.jl](https://github.com/JuliaDiff/ChainRulesCore.jl).
+The functionality of this package is now included in [NNlib.jl](https://fluxml.ai/NNlib.jl/dev/reference/#Rotation).
+
 
 Try it out with:
 ```julia
@@ -50,6 +52,7 @@ But, it doesn't run with `CuArrays` and does not provide an adjoint/gradient rul
 There is `rotate` by [FourierTools.jl](https://nanoimaging.de/FourierTools.jl/dev/rotate/).
 It's based on FFTs. It is based on a sinc interpolation.
 
+The functionality of this package is now included in [NNlib.jl](https://fluxml.ai/NNlib.jl/dev/reference/#Rotation).
 
 ## Benchmarks
 Tested on a AMD Ryzen 9 5900X 12-Core Processor with 24 Threads and a NVIDIA GeForce RTX 3060 with Julia 1.9.4 on Ubuntu 22.04.
